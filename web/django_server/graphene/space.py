@@ -6,7 +6,9 @@ from graphene_django.filter import DjangoFilterConnectionField
 
 from django_server import const
 from django_server import models
-from django_server.graphene.utils import assign, has_building, has_space, get_object_from_global_id
+from django_server.graphene.utils import (assign, has_building, has_space,
+                                          get_object_from_global_id, get_local_id_from_global_id)
+
 
 logger = logging.getLogger('__file__')
 
@@ -124,8 +126,7 @@ class CreateSpace(graphene.Mutation):
         name = kwargs.get('name')
         required_man_class = kwargs.get('required_man_class', const.ManClassEnum.NON_MEMBER.value)
         state = kwargs.get('state', const.SpaceStateEnum.WATING.value)
-        building_id = kwargs.get('building_id')
-        building = models.Building.objects.get(pk=building_id)
+        building = get_object_from_global_id(models.Building, kwargs.get('building_id'))
 
         # FIXME
         user = models.Profile.objects.first()
