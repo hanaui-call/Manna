@@ -1,9 +1,12 @@
+import logging
 from collections import namedtuple
 from functools import wraps
 
-from graphql_relay.node.node import from_global_id
+from graphql_relay.node.node import from_global_id, to_global_id
 
 from django_server import models
+
+logger = logging.getLogger('__file__')
 
 Rid = namedtuple('Rid', 'name id')
 
@@ -15,9 +18,17 @@ def assign(args, obj, key):
     setattr(obj, key, args[key])
 
 
-def get_object_from_global_id(obj, global_id):
+def get_global_id_from_object(type_name, local_id):
+    return to_global_id(type_name, local_id)
+
+
+def get_local_id_from_global_id(global_id):
     rid = Rid(*from_global_id(global_id))
-    return obj.objects.get(pk=rid.id)
+    return rid.id
+
+
+def get_object_from_global_id(obj, global_id):
+    return obj.objects.get(pk=get_local_id_from_global_id(global_id))
 
 
 def has_building(func):

@@ -17,7 +17,7 @@ class Profile(BaseModel):
     nickname = models.CharField(max_length=32, blank=True)
 
     def __str__(self):
-        return f'{self.user.last_name}{self.user.first_name}, {self.nickname}'
+        return f'{self.user.username}, {self.nickname}'
 
 
 class Building(BaseModel):
