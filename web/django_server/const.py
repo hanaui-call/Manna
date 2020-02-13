@@ -32,3 +32,11 @@ class ManClassEnum(BaseEnum):
     MEMBER = 'm'
     NON_MEMBER = 'n'
     GUEST = 'g'
+
+
+class ProgramStateEnum(BaseEnum):
+    READY = 'r'
+    INVITING = 'i'
+    PROGRESS = 'p'
+    END = 'e'
+    SUSPEND = 's'

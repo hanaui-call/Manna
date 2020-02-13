@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from django.db import models
 
-from django_server.const import ManClassEnum, SpaceStateEnum
+from django_server.const import ManClassEnum, SpaceStateEnum, ProgramStateEnum
 
 
 class BaseModel(models.Model):
@@ -46,3 +46,19 @@ class Space(BaseModel):
 
     def __str__(self):
         return f'{self.name}, {self.required_man_class}, {self.state}'
+
+
+class Program(BaseModel):
+    name = models.CharField(max_length=128)
+    description = models.TextField(blank=True)
+    space = models.ForeignKey(Space, on_delete=models.SET_NULL, null=True)
+    state = models.CharField(max_length=1, default=ProgramStateEnum.READY.value)
+    owner = models.ForeignKey(Profile, related_name='Program', on_delete=models.SET_NULL, null=True)
+    participants = models.ManyToManyField(Profile)
+    participants_min = models.IntegerField(default=1)
+    participants_max = models.IntegerField(default=10)
+    required_man_class = models.CharField(max_length=1, default=ManClassEnum.NON_MEMBER.value)
+    open_time = models.DateTimeField()
+    close_time = models.DateTimeField(null=True)
+    # tags =
+    # header_image =
