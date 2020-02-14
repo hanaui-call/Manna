@@ -96,6 +96,8 @@ class SpaceTestCase(BaseTestCase):
         ok = self.execute(gql, variables)['deleteBuilding']['ok']
         self.assertTrue(ok)
 
+        self.assertEqual(0, Building.objects.all().count())
+
     def test_query_building(self):
         user = self.create_user()
         self.create_building(name="빌딩1", address="주소1", user=user)
@@ -205,6 +207,8 @@ class SpaceTestCase(BaseTestCase):
 
         ok = self.execute(gql, variables)['deleteSpace']['ok']
         self.assertTrue(ok)
+
+        self.assertEqual(0, Space.objects.all().count())
 
     def test_query_space(self):
         user = self.create_user()

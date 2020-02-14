@@ -1,19 +1,11 @@
-import logging
-
 import graphene
 from graphene_django import DjangoObjectType
 from graphene_django.filter import DjangoFilterConnectionField
 
 from django_server import const
 from django_server import models
-from django_server.graphene.utils import (assign, has_building, has_space,
-                                          get_object_from_global_id, get_local_id_from_global_id)
-
-
-logger = logging.getLogger('__file__')
-
-ManClass = graphene.Enum.from_enum(const.ManClassEnum)
-SpaceState = graphene.Enum.from_enum(const.SpaceStateEnum)
+from django_server.graphene.base import ManClass, SpaceState
+from django_server.graphene.utils import assign, has_building, has_space, get_object_from_global_id
 
 
 class Space(DjangoObjectType):
@@ -29,11 +21,11 @@ class Space(DjangoObjectType):
         exclude_fields = ('state', 'required_man_class')
 
     @staticmethod
-    def resove_state(root, info, **kwargs):
+    def resolve_state(root, info, **kwargs):
         return root.state
 
     @staticmethod
-    def resove_required_man_class(root, info, **kwargs):
+    def resolve_required_man_class(root, info, **kwargs):
         return root.required_man_class
 
 

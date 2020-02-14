@@ -1,9 +1,10 @@
 from django.contrib.auth.models import User
+from datetime import datetime
 from django.test import TestCase
 
-from django_server.models import Profile, Building, Space
+from django_server.models import Profile, Building, Space, Program
 from django_server.schema import schema
-from django_server.const import SpaceStateEnum, ManClassEnum
+from django_server.const import SpaceStateEnum, ManClassEnum, ProgramStateEnum
 
 
 class Context(object):
@@ -52,3 +53,22 @@ class BaseTestCase(TestCase):
                                     required_man_class=required_man_class,
                                     state=state,
                                     made_user=user)
+
+    def create_program(self, name='기본프로그램', description='', space=None, required_man_class=ManClassEnum.NON_MEMBER.value,
+                       state=ProgramStateEnum.READY.value, user=None, participants_min=1, participants_max=10,
+                       open_time=datetime.now(), close_time=None):
+        if not user:
+            user = self.create_user(username='program_man', email='program_man@test.ai', nickname='program_man')
+        if not space:
+            space = self.create_space(user=user)
+
+        return Program.objects.create(name=name,
+                                      description=description,
+                                      space=space,
+                                      state=state,
+                                      participants_max=participants_max,
+                                      participants_min=participants_min,
+                                      required_man_class=required_man_class,
+                                      open_time=open_time,
+                                      close_time=close_time,
+                                      owner=user)
