@@ -4,8 +4,8 @@ from graphene_django.filter import DjangoFilterConnectionField
 
 from django_server import const
 from django_server import models
-from django_server.graphene.base import ManClass, ProgramState, logger
-from django_server.graphene.utils import get_object_from_global_id, has_program, assign
+from django_server.graphene.base import ManClass, ProgramState
+from django_server.graphene.utils import get_object_from_global_id, has_program, assign, has_meeting
 
 
 class Program(DjangoObjectType):
@@ -30,6 +30,15 @@ class Program(DjangoObjectType):
         return root.required_man_class
 
 
+class Meeting(DjangoObjectType):
+    class Meta:
+        model = models.Meeting
+        filter_fields = {
+            'name': ['exact', 'icontains'],
+        }
+        interfaces = (graphene.Node,)
+
+
 class CreateProgram(graphene.Mutation):
     program = graphene.Field(Program)
 
@@ -38,7 +47,6 @@ class CreateProgram(graphene.Mutation):
         description = graphene.String()
         space_id = graphene.ID()
         state = graphene.Argument(ProgramState)
-        participants = graphene.List(graphene.ID)
         participants_min = graphene.Int()
         participants_max = graphene.Int()
         required_man_class = graphene.Argument(ManClass)
@@ -125,17 +133,97 @@ class DeleteProgram(graphene.Mutation):
         return DeleteProgram(ok=True)
 
 
+class CreateMeeting(graphene.Mutation):
+    meeting = graphene.Field(Meeting)
+
+    class Arguments:
+        name = graphene.String(required=True)
+        program_id = graphene.ID(required=True)
+        start_time = graphene.types.datetime.DateTime(required=True)
+        end_time = graphene.types.datetime.DateTime(required=True)
+
+    @staticmethod
+    def mutate(root, info, **kwargs):
+        name = kwargs.get('name')
+        program = get_object_from_global_id(models.Program, kwargs.get('program_id'))
+        start_time = kwargs.get('start_time')
+        end_time = kwargs.get('end_time')
+
+        meeting = models.Meeting.objects.create(name=name,
+                                                program=program,
+                                                start_time=start_time,
+                                                end_time=end_time)
+
+        return CreateMeeting(meeting=meeting)
+
+
+class UpdateMeeting(graphene.Mutation):
+    meeting = graphene.Field(Meeting)
+
+    class Arguments:
+        id = graphene.ID(required=True)
+        name = graphene.String()
+        start_time = graphene.types.datetime.DateTime()
+        end_time = graphene.types.datetime.DateTime()
+
+    @staticmethod
+    @has_meeting
+    def mutate(root, info, **kwargs):
+        meeting = info.context.meeting
+
+        assign(kwargs, meeting, 'name')
+        assign(kwargs, meeting, 'start_time')
+        assign(kwargs, meeting, 'end_time')
+        meeting.save()
+
+        return UpdateMeeting(meeting=meeting)
+
+
+class DeleteMeeting(graphene.Mutation):
+    ok = graphene.Boolean()
+
+    class Arguments:
+        id = graphene.ID(required=True)
+
+    @staticmethod
+    @has_meeting
+    def mutate(root, info, **kwargs):
+        info.context.meeting.delete()
+        return DeleteMeeting(ok=True)
+
+
 class ProgramQuery(graphene.ObjectType):
     program = graphene.Field(Program, id=graphene.ID(required=True))
+    meeting = graphene.Field(Meeting, id=graphene.ID(required=True))
     all_programs = DjangoFilterConnectionField(Program)
+    all_meetings = DjangoFilterConnectionField(Meeting, program_id=graphene.ID())
 
     @staticmethod
     @has_program
     def resolve_program(root, info, **kwargs):
         return info.context.program
 
+    @staticmethod
+    @has_meeting
+    def resolve_meeting(root, info, **kwargs):
+        return info.context.meeting
+
+    @staticmethod
+    def resolve_all_meetings(root, info, **kwargs):
+        meetings = models.Meeting.objects.all()
+
+        program_id = kwargs.get('program_id')
+        if program_id:
+            program = get_object_from_global_id(models.Program, program_id)
+            meetings = meetings.filter(program=program)
+
+        return meetings
+
 
 class ProgramMutation(graphene.ObjectType):
     create_program = CreateProgram.Field()
     update_program = UpdateProgram.Field()
     delete_program = DeleteProgram.Field()
+    create_meeting = CreateMeeting.Field()
+    update_meeting = UpdateMeeting.Field()
+    delete_meeting = DeleteMeeting.Field()

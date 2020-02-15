@@ -28,9 +28,10 @@ def get_local_id_from_global_id(global_id):
 
 
 def get_object_from_global_id(obj, global_id):
-    if not global_id:
+    try:
+        return obj.objects.get(pk=get_local_id_from_global_id(global_id))
+    except Exception:
         return None
-    return obj.objects.get(pk=get_local_id_from_global_id(global_id))
 
 
 def has_building(func):
@@ -53,5 +54,13 @@ def has_program(func):
     @wraps(func)
     def wrap(root, info, **kwargs):
         info.context.program = get_object_from_global_id(models.Program, kwargs.get('id'))
+        return func(root, info, **kwargs)
+    return wrap
+
+
+def has_meeting(func):
+    @wraps(func)
+    def wrap(root, info, **kwargs):
+        info.context.meeting = get_object_from_global_id(models.Meeting, kwargs.get('id'))
         return func(root, info, **kwargs)
     return wrap
