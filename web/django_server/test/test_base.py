@@ -1,10 +1,11 @@
+from datetime import datetime, timedelta
+
 from django.contrib.auth.models import User
-from datetime import datetime
 from django.test import TestCase
 
-from django_server.models import Profile, Building, Space, Program
-from django_server.schema import schema
 from django_server.const import SpaceStateEnum, ManClassEnum, ProgramStateEnum
+from django_server.models import Profile, Building, Space, Program, Meeting
+from django_server.schema import schema
 
 
 class Context(object):
@@ -72,3 +73,13 @@ class BaseTestCase(TestCase):
                                       open_time=open_time,
                                       close_time=close_time,
                                       owner=user)
+
+    def create_meeting(self, name='기본프로그램', program=None,
+                       start_time=datetime.now(), end_time=datetime.now() + timedelta(hours=1)):
+        if not program:
+            program = self.create_program()
+
+        return Meeting.objects.create(name=name,
+                                      program=program,
+                                      start_time=start_time,
+                                      end_time=end_time)

@@ -60,5 +60,23 @@ class Program(BaseModel):
     required_man_class = models.CharField(max_length=1, default=ManClassEnum.NON_MEMBER.value)
     open_time = models.DateTimeField()
     close_time = models.DateTimeField(null=True)
+    is_after_school = models.BooleanField(default=False)
     # tags =
     # header_image =
+
+    def __str__(self):
+        return f'{self.name}, {self.required_man_class}, {self.state}'
+
+
+class Meeting(BaseModel):
+    name = models.CharField(max_length=128)
+    program = models.ForeignKey(Program, on_delete=models.CASCADE)
+    start_time = models.DateTimeField()
+    end_time = models.DateTimeField()
+    participants = models.ManyToManyField(Profile)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f'{self.name}, ({self.program})'
