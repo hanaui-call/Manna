@@ -30,3 +30,16 @@ services:
       - pgdata:/var/lib/postgresql/data/
     networks:
       - backend
+
+  nginx:
+    restart: always
+    image: nginx:1.17.8
+    ports:
+      - "8580:80"
+    networks:
+      - backend
+    depends_on:
+      - web
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/dev:/etc/nginx/conf.d
