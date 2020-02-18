@@ -1,0 +1,45 @@
+version: "3"
+
+networks:
+  backend:
+
+volumes:
+  pgdata:
+
+services:
+  web:
+    restart: always
+    build: ./web
+    expose:
+      - "8000" # django
+    depends_on:
+      - postgres
+    volumes:
+      - ./web:/app
+    networks:
+      - backend
+    env_file: .env_production
+    command: ./bootup.sh
+
+  postgres:
+    restart: always
+    image: postgres:10.11
+    expose:
+      - "5432"
+    volumes:
+      - ./postgres/data:/var/lib/postgresql/data/
+    networks:
+      - backend
+
+  nginx:
+    restart: always
+    image: nginx:1.17.8
+    ports:
+      - "80:80"
+    networks:
+      - backend
+    depends_on:
+      - web
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/production:/etc/nginx/conf.d
