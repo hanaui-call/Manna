@@ -40,3 +40,9 @@ class ProgramStateEnum(BaseEnum):
     PROGRESS = 'p'
     END = 'e'
     SUSPEND = 's'
+
+
+class UserStatusEnum(BaseEnum):
+    ACTIVE = 'a'
+    INACTIVE = 'i'
+    DELETED = 'd'

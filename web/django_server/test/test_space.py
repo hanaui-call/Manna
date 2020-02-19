@@ -5,17 +5,10 @@ from django_server.graphene.utils import get_global_id_from_object
 from django_server.test.test_base import BaseTestCase
 from django_server.models import Space, Building
 
-logger = logging.getLogger('__file__')
+logger = logging.getLogger(__name__)
 
 
 class SpaceTestCase(BaseTestCase):
-    @classmethod
-    def setUpTestData(cls):
-        pass
-
-    def setUp(self):
-        self.clean_db()
-
     def test_create_building(self):
         gql = """
         mutation CreateBuilding($name:String!, $address:String!, $detailedAddress:String, $phone:String) {

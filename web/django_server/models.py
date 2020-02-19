@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from django.db import models
 
-from django_server.const import ManClassEnum, SpaceStateEnum, ProgramStateEnum
+from django_server.const import ManClassEnum, SpaceStateEnum, ProgramStateEnum, UserStatusEnum
 
 
 class BaseModel(models.Model):
@@ -15,6 +15,8 @@ class BaseModel(models.Model):
 class Profile(BaseModel):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     nickname = models.CharField(max_length=32, blank=True)
+    status = models.CharField(max_length=1, default=UserStatusEnum.ACTIVE.value)
+    last_signin = models.DateTimeField(null=True)
 
     def __str__(self):
         return f'{self.user.username}, {self.nickname}'

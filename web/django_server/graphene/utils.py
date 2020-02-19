@@ -6,7 +6,7 @@ from graphql_relay.node.node import from_global_id, to_global_id
 
 from django_server import models
 
-logger = logging.getLogger('__file__')
+logger = logging.getLogger(__name__)
 
 Rid = namedtuple('Rid', 'name id')
 

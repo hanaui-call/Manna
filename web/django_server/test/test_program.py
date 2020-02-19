@@ -9,13 +9,6 @@ logger = logging.getLogger('__file__')
 
 
 class SpaceTestCase(BaseTestCase):
-    @classmethod
-    def setUpTestData(cls):
-        pass
-
-    def setUp(self):
-        self.clean_db()
-
     def test_create_program(self):
         space_name = '장소1'
         space = self.create_space(space_name)
