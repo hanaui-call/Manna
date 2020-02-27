@@ -6,6 +6,7 @@ from django_server import const
 from django_server import models
 from django_server.graphene.base import ManClass, ProgramState
 from django_server.graphene.utils import get_object_from_global_id, has_program, assign, has_meeting
+from django_server.libs.authentification import authorization
 
 
 class Program(DjangoObjectType):
@@ -54,6 +55,7 @@ class CreateProgram(graphene.Mutation):
         close_time = graphene.types.datetime.DateTime()
 
     @staticmethod
+    @authorization
     def mutate(root, info, **kwargs):
         name = kwargs.get('name')
         description = kwargs.get('description', '')
@@ -65,8 +67,8 @@ class CreateProgram(graphene.Mutation):
         open_time = kwargs.get('open_time')
         close_time = kwargs.get('close_time')
 
-        # FIXME
-        user = models.Profile.objects.first()
+        user = info.context.user
+
         program = models.Program.objects.create(name=name,
                                                 description=description,
                                                 space=space,
@@ -97,6 +99,7 @@ class UpdateProgram(graphene.Mutation):
         close_time = graphene.types.datetime.DateTime()
 
     @staticmethod
+    @authorization
     @has_program
     def mutate(root, info, **kwargs):
         program = info.context.program
@@ -127,6 +130,7 @@ class DeleteProgram(graphene.Mutation):
         id = graphene.ID(required=True)
 
     @staticmethod
+    @authorization
     @has_program
     def mutate(root, info, **kwargs):
         info.context.program.delete()
@@ -143,6 +147,7 @@ class CreateMeeting(graphene.Mutation):
         end_time = graphene.types.datetime.DateTime(required=True)
 
     @staticmethod
+    @authorization
     def mutate(root, info, **kwargs):
         name = kwargs.get('name')
         program = get_object_from_global_id(models.Program, kwargs.get('program_id'))
@@ -167,6 +172,7 @@ class UpdateMeeting(graphene.Mutation):
         end_time = graphene.types.datetime.DateTime()
 
     @staticmethod
+    @authorization
     @has_meeting
     def mutate(root, info, **kwargs):
         meeting = info.context.meeting
@@ -186,6 +192,7 @@ class DeleteMeeting(graphene.Mutation):
         id = graphene.ID(required=True)
 
     @staticmethod
+    @authorization
     @has_meeting
     def mutate(root, info, **kwargs):
         info.context.meeting.delete()
@@ -199,14 +206,14 @@ class ProgramQuery(graphene.ObjectType):
     all_meetings = DjangoFilterConnectionField(Meeting, program_id=graphene.ID())
 
     @staticmethod
-    @has_program
     def resolve_program(root, info, **kwargs):
-        return info.context.program
+        program = get_object_from_global_id(models.Program, kwargs.get('id'))
+        return program
 
     @staticmethod
-    @has_meeting
     def resolve_meeting(root, info, **kwargs):
-        return info.context.meeting
+        meeting = get_object_from_global_id(models.Meeting, kwargs.get('id'))
+        return meeting
 
     @staticmethod
     def resolve_all_meetings(root, info, **kwargs):

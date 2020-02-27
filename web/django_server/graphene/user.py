@@ -8,8 +8,7 @@ from graphene_django import DjangoObjectType
 
 from django_server import models
 from django_server.graphene.base import UserStatus
-from django_server.libs.authentification import AuthHelper
-from django_server.libs.authentification import authorization
+from django_server.libs.authentification import AuthHelper, authorization
 
 logger = logging.getLogger(__name__)
 

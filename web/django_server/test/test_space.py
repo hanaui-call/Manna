@@ -32,16 +32,16 @@ class SpaceTestCase(BaseTestCase):
             'phone': '010-1234-5678'
         }
 
-        data = self.execute(gql, variables)['createBuilding']['building']
-        self.assertEqual(data['name'], variables['name'])
-        self.assertEqual(data['address'], variables['address'])
-        self.assertEqual(data['detailedAddress'], variables['detailedAddress'])
-        self.assertEqual(data['phone'], variables['phone'])
+        data = self.execute(gql, variables, user=self.user)['createBuilding']['building']
+        self.assertEqual(variables['name'], data['name'])
+        self.assertEqual(variables['address'], data['address'])
+        self.assertEqual(variables['detailedAddress'], data['detailedAddress'])
+        self.assertEqual(variables['phone'], data['phone'])
         self.assertEqual(1, Building.objects.all().count())
+        self.assertEqual(self.user.user.username, data['madeUser']['name'])
 
     def test_update_building(self):
-        user = self.create_user()
-        building = self.create_building(name="빌딩1", address="주소1", user=user)
+        building = self.create_building(name="빌딩1", address="주소1", user=self.user)
 
         gql = """
         mutation UpdateBuilding($id:ID!, $name:String, $address:String, $detailedAddress:String, $phone:String) {
@@ -63,15 +63,14 @@ class SpaceTestCase(BaseTestCase):
             'phone': '010-1234-5678'
         }
 
-        data = self.execute(gql, variables)['updateBuilding']['building']
-        self.assertEqual(data['name'], variables['name'])
-        self.assertEqual(data['address'], variables['address'])
-        self.assertEqual(data['detailedAddress'], variables['detailedAddress'])
-        self.assertEqual(data['phone'], variables['phone'])
+        data = self.execute(gql, variables, user=self.user)['updateBuilding']['building']
+        self.assertEqual(variables['name'], data['name'])
+        self.assertEqual(variables['address'], data['address'])
+        self.assertEqual(variables['detailedAddress'], data['detailedAddress'])
+        self.assertEqual(variables['phone'], data['phone'])
 
     def test_delete_building(self):
-        user = self.create_user()
-        building = self.create_building(name="빌딩1", address="주소1", user=user)
+        building = self.create_building(name="빌딩1", address="주소1", user=self.user)
 
         gql = """
         mutation DeleteBuilding($id:ID!) {
@@ -86,7 +85,7 @@ class SpaceTestCase(BaseTestCase):
 
         self.assertEqual(1, Building.objects.all().count())
 
-        ok = self.execute(gql, variables)['deleteBuilding']['ok']
+        ok = self.execute(gql, variables, user=self.user)['deleteBuilding']['ok']
         self.assertTrue(ok)
 
         self.assertEqual(0, Building.objects.all().count())
@@ -122,7 +121,7 @@ class SpaceTestCase(BaseTestCase):
 
     def test_create_space(self):
         building_name = '와우빌딩'
-        building = self.create_building(name=building_name)
+        building = self.create_building(name=building_name, user=self.user)
 
         gql = """
         mutation CreateSpace($buildingId:ID!, $name:String!, $requiredManClass:ManClassEnum, $state:SpaceStateEnum) {
@@ -149,15 +148,15 @@ class SpaceTestCase(BaseTestCase):
 
         variables['buildingId'] = get_global_id_from_object('Building', building.pk)
 
-        data = self.execute(gql, variables)['createSpace']['space']
-        self.assertEqual(data['name'], variables['name'])
-        self.assertEqual(data['state'], variables['state'])
-        self.assertEqual(data['requiredManClass'], variables['requiredManClass'])
-        self.assertEqual(data['building']['name'], building_name)
+        data = self.execute(gql, variables, user=self.user)['createSpace']['space']
+        self.assertEqual(variables['name'], data['name'])
+        self.assertEqual(variables['state'], data['state'])
+        self.assertEqual(variables['requiredManClass'], data['requiredManClass'])
+        self.assertEqual(building_name, data['building']['name'])
         self.assertEqual(1, Space.objects.all().count())
 
     def test_update_space(self):
-        space = self.create_space()
+        space = self.create_space(user=self.user)
 
         gql = """
         mutation UpdateSpace($id:ID!, $buildingId:ID, $name:String, $requiredManClass:ManClassEnum, $state:SpaceStateEnum) {
@@ -177,13 +176,13 @@ class SpaceTestCase(BaseTestCase):
             'state': SpaceStateEnum.UNAVAILABLE.name
         }
 
-        data = self.execute(gql, variables)['updateSpace']['space']
-        self.assertEqual(data['name'], variables['name'])
-        self.assertEqual(data['requiredManClass'], variables['requiredManClass'])
-        self.assertEqual(data['state'], variables['state'])
+        data = self.execute(gql, variables, user=self.user)['updateSpace']['space']
+        self.assertEqual(variables['name'], data['name'])
+        self.assertEqual(variables['requiredManClass'], data['requiredManClass'])
+        self.assertEqual(variables['state'], data['state'])
 
     def test_delete_space(self):
-        space = self.create_space()
+        space = self.create_space(user=self.user)
 
         gql = """
         mutation DeleteSpace($id:ID!) {
@@ -198,16 +197,15 @@ class SpaceTestCase(BaseTestCase):
 
         self.assertEqual(1, Space.objects.all().count())
 
-        ok = self.execute(gql, variables)['deleteSpace']['ok']
+        ok = self.execute(gql, variables, user=self.user)['deleteSpace']['ok']
         self.assertTrue(ok)
 
         self.assertEqual(0, Space.objects.all().count())
 
     def test_query_space(self):
-        user = self.create_user()
-        building = self.create_building(name="빌딩1", address="주소1", user=user)
-        self.create_space(name="공간1", user=user, building=building)
-        self.create_space(name="공간2", user=user, building=building)
+        building = self.create_building(name="빌딩1", address="주소1", user=self.user)
+        self.create_space(name="공간1", user=self.user, building=building)
+        self.create_space(name="공간2", user=self.user, building=building)
 
         gql = """
         query AllSpaces {
