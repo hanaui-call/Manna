@@ -17,6 +17,7 @@ class Profile(BaseModel):
     nickname = models.CharField(max_length=32, blank=True)
     status = models.CharField(max_length=1, default=UserStatusEnum.ACTIVE.value)
     last_signin = models.DateTimeField(null=True)
+    role = models.CharField(max_length=1, default=ManClassEnum.MEMBER.value)
 
     def __str__(self):
         return f'{self.user.username}, {self.nickname}'

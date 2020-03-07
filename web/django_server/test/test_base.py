@@ -29,7 +29,7 @@ class BaseTestCase(TestCase):
 
     @staticmethod
     def clean_db():
-        for x in [User, Building, Space]:
+        for x in [User, Building, Space, Program, Meeting]:
             x.objects.all().delete()
 
     @staticmethod
