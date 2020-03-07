@@ -56,8 +56,7 @@ class Program(BaseModel):
     description = models.TextField(blank=True)
     space = models.ForeignKey(Space, on_delete=models.SET_NULL, null=True)
     state = models.CharField(max_length=1, default=ProgramStateEnum.READY.value)
-    owner = models.ForeignKey(Profile, related_name='Program', on_delete=models.SET_NULL, null=True)
-    participants = models.ManyToManyField(Profile)
+    owner = models.ForeignKey(Profile, related_name='program', on_delete=models.SET_NULL, null=True)
     participants_min = models.IntegerField(default=1)
     participants_max = models.IntegerField(default=10)
     required_man_class = models.CharField(max_length=1, default=ManClassEnum.NON_MEMBER.value)
@@ -73,13 +72,32 @@ class Program(BaseModel):
 
 class Meeting(BaseModel):
     name = models.CharField(max_length=128)
-    program = models.ForeignKey(Program, on_delete=models.CASCADE)
+    program = models.ForeignKey(Program, related_name="meeting", on_delete=models.CASCADE)
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
-    participants = models.ManyToManyField(Profile)
 
     class Meta:
         ordering = ['created_at']
 
     def __str__(self):
         return f'{self.name}, ({self.program})'
+
+
+class ProgramParticipant(BaseModel):
+    program = models.ForeignKey(Program, related_name='program_participant', on_delete=models.CASCADE)
+    participant = models.ForeignKey(Profile, related_name='program_participant', on_delete=models.SET_NULL, null=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['program', 'participant'], name='program_participant_constraint')
+        ]
+
+
+class MeetingParticipant(BaseModel):
+    meeting = models.ForeignKey(Meeting, related_name='meeting_participant', on_delete=models.CASCADE)
+    participant = models.ForeignKey(Profile, related_name='meeting_participant', on_delete=models.SET_NULL, null=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['meeting', 'participant'], name='meeting_participant_constraint')
+        ]

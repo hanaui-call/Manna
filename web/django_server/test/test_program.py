@@ -5,7 +5,7 @@ from django_server.graphene.utils import get_global_id_from_object
 from django_server.test.test_base import BaseTestCase
 from django_server.models import Program, Meeting
 
-logger = logging.getLogger('__file__')
+logger = logging.getLogger(__name__)
 
 
 class SpaceTestCase(BaseTestCase):
