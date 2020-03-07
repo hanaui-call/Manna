@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timedelta
 
 from django.contrib.auth.models import User
@@ -7,6 +8,8 @@ from django_server.const import SpaceStateEnum, ManClassEnum, ProgramStateEnum
 from django_server.models import Profile, Building, Space, Program, Meeting
 from django_server.schema import schema
 
+logger = logging.getLogger(__name__)
+
 
 class Context(object):
     def __init__(self):
@@ -14,22 +17,35 @@ class Context(object):
 
 
 class BaseTestCase(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        pass
+
+    def setUp(self):
+        self.clean_db()
+        self.user = self.create_user(username='TestAdmin',
+                                     email='test_admin@test.ai',
+                                     nickname='TA')
+
     @staticmethod
     def clean_db():
         for x in [User, Building, Space]:
             x.objects.all().delete()
 
     @staticmethod
-    def execute(gql, variables=None):
+    def execute(gql, variables=None, user=None):
         context = Context()
+        if user:
+            context.user = user
+
         result = schema.execute(gql, variables=variables, context=context)
         if result.errors:
             raise Exception(result.errors)
         return result.data
 
     @staticmethod
-    def create_user(username='Test', email='test@test.ai', nickname='testking'):
-        user = User.objects.create_user(username=username, email=email)
+    def create_user(username='Test', email='test@test.ai', nickname='testking', password='password'):
+        user = User.objects.create_user(username=username, email=email, password=password)
         return Profile.objects.create(user=user, nickname=nickname)
 
     def create_building(self, name='기본빌딩', address='서울시', detailed_address='123층', phone='12-1234', user=None):

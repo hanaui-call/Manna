@@ -6,6 +6,7 @@ from django_server import const
 from django_server import models
 from django_server.graphene.base import ManClass, SpaceState
 from django_server.graphene.utils import assign, has_building, has_space, get_object_from_global_id
+from django_server.libs.authentification import authorization
 
 
 class Space(DjangoObjectType):
@@ -49,14 +50,13 @@ class CreateBuilding(graphene.Mutation):
         phone = graphene.String()
 
     @staticmethod
+    @authorization
     def mutate(root, info, **kwargs):
         name = kwargs.get('name')
         address = kwargs.get('address')
         detailed_address = kwargs.get('detailed_address', '')
         phone = kwargs.get('phone', '')
-
-        # FIXME
-        user = models.Profile.objects.first()
+        user = info.context.user
 
         building = models.Building.objects.create(name=name,
                                                   address=address,
@@ -77,6 +77,7 @@ class UpdateBuilding(graphene.Mutation):
         phone = graphene.String()
 
     @staticmethod
+    @authorization
     @has_building
     def mutate(root, info, **kwargs):
         building = info.context.building
@@ -98,6 +99,7 @@ class DeleteBuilding(graphene.Mutation):
         id = graphene.ID(required=True)
 
     @staticmethod
+    @authorization
     @has_building
     def mutate(root, info, **kwargs):
         info.context.building.delete()
@@ -114,14 +116,14 @@ class CreateSpace(graphene.Mutation):
         building_id = graphene.ID(required=True)
 
     @staticmethod
+    @authorization
     def mutate(root, info, **kwargs):
         name = kwargs.get('name')
         required_man_class = kwargs.get('required_man_class', const.ManClassEnum.NON_MEMBER.value)
         state = kwargs.get('state', const.SpaceStateEnum.WATING.value)
         building = get_object_from_global_id(models.Building, kwargs.get('building_id'))
+        user = info.context.user
 
-        # FIXME
-        user = models.Profile.objects.first()
         space = models.Space.objects.create(name=name,
                                             building=building,
                                             required_man_class=required_man_class,
@@ -142,6 +144,7 @@ class UpdateSpace(graphene.Mutation):
         building_id = graphene.ID()
 
     @staticmethod
+    @authorization
     @has_space
     def mutate(root, info, **kwargs):
         space = info.context.space
@@ -167,6 +170,7 @@ class DeleteSpace(graphene.Mutation):
         id = graphene.ID(required=True)
 
     @staticmethod
+    @authorization
     @has_space
     def mutate(root, info, **kwargs):
         info.context.space.delete()
@@ -180,14 +184,14 @@ class SpaceQuery(graphene.ObjectType):
     all_buildings = DjangoFilterConnectionField(Building)
 
     @staticmethod
-    @has_space
     def resolve_space(root, info, **kwargs):
-        return info.context.space
+        space = get_object_from_global_id(models.Space, kwargs.get('id'))
+        return space
 
     @staticmethod
-    @has_building
     def resolve_building(root, info, **kwargs):
-        return info.context.building
+        building = get_object_from_global_id(models.Building, kwargs.get('id'))
+        return building
 
 
 class SpaceMutation(graphene.ObjectType):

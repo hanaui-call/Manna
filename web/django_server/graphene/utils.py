@@ -6,7 +6,7 @@ from graphql_relay.node.node import from_global_id, to_global_id
 
 from django_server import models
 
-logger = logging.getLogger('__file__')
+logger = logging.getLogger(__name__)
 
 Rid = namedtuple('Rid', 'name id')
 
@@ -37,7 +37,9 @@ def get_object_from_global_id(obj, global_id):
 def has_building(func):
     @wraps(func)
     def wrap(root, info, **kwargs):
-        info.context.building = get_object_from_global_id(models.Building, kwargs.get('id'))
+        building = get_object_from_global_id(models.Building, kwargs.get('id'))
+        info.context.building = building
+        # TODO compare info.context.user with building.made_user
         return func(root, info, **kwargs)
     return wrap
 
@@ -45,7 +47,9 @@ def has_building(func):
 def has_space(func):
     @wraps(func)
     def wrap(root, info, **kwargs):
-        info.context.space = get_object_from_global_id(models.Space, kwargs.get('id'))
+        space = get_object_from_global_id(models.Space, kwargs.get('id'))
+        info.context.space = space
+        # TODO compare info.context.user with space.made_user
         return func(root, info, **kwargs)
     return wrap
 
@@ -53,7 +57,9 @@ def has_space(func):
 def has_program(func):
     @wraps(func)
     def wrap(root, info, **kwargs):
-        info.context.program = get_object_from_global_id(models.Program, kwargs.get('id'))
+        program = get_object_from_global_id(models.Program, kwargs.get('id'))
+        info.context.program = program
+        # TODO compare info.context.user with program.owner
         return func(root, info, **kwargs)
     return wrap
 
@@ -61,6 +67,8 @@ def has_program(func):
 def has_meeting(func):
     @wraps(func)
     def wrap(root, info, **kwargs):
-        info.context.meeting = get_object_from_global_id(models.Meeting, kwargs.get('id'))
+        meeting = get_object_from_global_id(models.Meeting, kwargs.get('id'))
+        info.context.meeting = meeting
+        # TODO compare info.context.user with meeting.program.owner
         return func(root, info, **kwargs)
     return wrap
