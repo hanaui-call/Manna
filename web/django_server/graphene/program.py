@@ -60,7 +60,7 @@ class CreateProgram(graphene.Mutation):
         name = kwargs.get('name')
         description = kwargs.get('description', '')
         space = get_object_from_global_id(models.Space, kwargs.get('space_id'))
-        state = kwargs.get('state', const.SpaceStateEnum.WATING.value)
+        state = kwargs.get('state', const.ProgramStateEnum.INVITING.value)
         participants_min = kwargs.get('participants_min', 1)
         participants_max = kwargs.get('participants_max', 10)
         required_man_class = kwargs.get('required_man_class', const.ManClassEnum.NON_MEMBER.value)
