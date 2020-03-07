@@ -40,6 +40,18 @@ class Meeting(DjangoObjectType):
         interfaces = (graphene.Node,)
 
 
+class ProgramParicipant(DjangoObjectType):
+    class Meta:
+        model = models.ProgramParticipant
+        interfaces = (graphene.Node,)
+
+
+class MeetingParicipant(DjangoObjectType):
+    class Meta:
+        model = models.MeetingParticipant
+        interfaces = (graphene.Node,)
+
+
 class CreateProgram(graphene.Mutation):
     program = graphene.Field(Program)
 
@@ -199,6 +211,72 @@ class DeleteMeeting(graphene.Mutation):
         return DeleteMeeting(ok=True)
 
 
+class ParticipateProgram(graphene.Mutation):
+    program_participant = graphene.Field(ProgramParicipant)
+
+    class Arguments:
+        program_id = graphene.ID(required=True)
+
+    @staticmethod
+    @authorization
+    def mutate(root, info, **kwargs):
+        user = info.context.user
+        program = get_object_from_global_id(models.Program, kwargs.get('program_id'))
+
+        program_participant = models.ProgramParticipant.objects.create(program=program, participant=user)
+
+        return ParticipateProgram(program_participant=program_participant)
+
+
+class LeaveProgram(graphene.Mutation):
+    program = graphene.Field(Program)
+
+    class Arguments:
+        program_id = graphene.ID(required=True)
+
+    @staticmethod
+    @authorization
+    def mutate(root, info, **kwargs):
+        user = info.context.user
+        program = get_object_from_global_id(models.Program, kwargs.get('program_id'))
+
+        models.ProgramParticipant.objects.get(program=program, participant=user).delete()
+        return LeaveProgram(program=program)
+
+
+class LeaveMeeting(graphene.Mutation):
+    meeting = graphene.Field(Meeting)
+
+    class Arguments:
+        meeting_id = graphene.ID(required=True)
+
+    @staticmethod
+    @authorization
+    def mutate(root, info, **kwargs):
+        user = info.context.user
+        meeting = get_object_from_global_id(models.Meeting, kwargs.get('meeting_id'))
+
+        models.MeetingParticipant.objects.get(meeting=meeting, participant=user).delete()
+        return LeaveMeeting(meeting=meeting)
+
+
+class ParticipateMeeting(graphene.Mutation):
+    meeting_participant = graphene.Field(MeetingParicipant)
+
+    class Arguments:
+        meeting_id = graphene.ID(required=True)
+
+    @staticmethod
+    @authorization
+    def mutate(root, info, **kwargs):
+        user = info.context.user
+        meeting = get_object_from_global_id(models.Meeting, kwargs.get('meeting_id'))
+
+        meeting_participant = models.MeetingParticipant.objects.create(meeting=meeting, participant=user)
+
+        return ParticipateMeeting(meeting_participant=meeting_participant)
+
+
 class ProgramQuery(graphene.ObjectType):
     program = graphene.Field(Program, id=graphene.ID(required=True))
     meeting = graphene.Field(Meeting, id=graphene.ID(required=True))
@@ -234,3 +312,8 @@ class ProgramMutation(graphene.ObjectType):
     create_meeting = CreateMeeting.Field()
     update_meeting = UpdateMeeting.Field()
     delete_meeting = DeleteMeeting.Field()
+
+    participate_program = ParticipateProgram.Field()
+    leave_program = LeaveProgram.Field()
+    participate_meeting = ParticipateMeeting.Field()
+    leave_meeting = LeaveMeeting.Field()
