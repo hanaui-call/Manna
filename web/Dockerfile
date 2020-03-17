@@ -11,6 +11,8 @@ RUN pip install django-pandas==0.6.1
 RUN pip install graphene==2.1.8
 RUN pip install graphene-django==2.8.1
 RUN pip install psycopg2-binary==2.8.4
+RUN pip install django-cors-headers==3.2.1
+RUN pip install django-cors-middleware==1.5.0
 RUN pip install ipython
 RUN pip install tqdm
 
