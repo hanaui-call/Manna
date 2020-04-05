@@ -37,19 +37,20 @@ def authorization(func):
 class TokenAuthGraphQLView(GraphQLView):
     def dispatch(self, request, *args, **kwargs):
         auth_header = request.META.get('HTTP_AUTHORIZATION')
-        ret = AuthHelper.decode_token(auth_header)[0]
 
-        if ret:
-            user_id = ret.get('user_id')
-            expires = ret.get('expires')
+        if auth_header:
+            ret = AuthHelper.decode_token(auth_header)[0]
+            if ret:
+                user_id = ret.get('user_id')
+                expires = ret.get('expires')
 
-            try:
-                profile = Profile.objects.get(id=user_id)
-                logger.debug(f"Login successful {profile}")
-                setattr(request, 'user', profile)
-                setattr(request, 'expires', expires)
-            except Exception:
-                pass
+                try:
+                    profile = Profile.objects.get(id=user_id)
+                    logger.debug(f"Login successful {profile}")
+                    setattr(request, 'user', profile)
+                    setattr(request, 'expires', expires)
+                except Exception:
+                    pass
 
         return super().dispatch(request, *args, **kwargs)
 
