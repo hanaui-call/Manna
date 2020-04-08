@@ -102,13 +102,16 @@ class SpaceTestCase(BaseTestCase):
         program = self.create_program(name=program_name, description='프로그램1설명입니다.', user=self.user)
 
         gql = """
-        mutation CreateMeeting($name:String!, $programId:ID!, $startTime:DateTime!, $endTime:DateTime!) {
-            createMeeting(name:$name, startTime:$startTime, endTime:$endTime, programId:$programId) {
+        mutation CreateMeeting($name:String!, $programId:ID!, $startTime:DateTime!, $endTime:DateTime!, $spaceId:ID) {
+            createMeeting(name:$name, startTime:$startTime, endTime:$endTime, programId:$programId, spaceId:$spaceId) {
                 meeting {
                     name
                     startTime
                     endTime
                     program {
+                        name
+                    }
+                    space {
                         name
                     }
                 }
@@ -119,7 +122,8 @@ class SpaceTestCase(BaseTestCase):
             'name': 'meet1',
             'startTime': '2020-02-14T20:10:00+09:00',
             'endTime': '2020-02-14T21:10:00+09:00',
-            'programId': get_global_id_from_object('Program', program.pk)
+            'programId': get_global_id_from_object('Program', program.pk),
+            'spaceId': get_global_id_from_object('Space', program.space.pk)
         }
 
         data = self.execute(gql, variables, user=self.user)['createMeeting']['meeting']
@@ -127,6 +131,7 @@ class SpaceTestCase(BaseTestCase):
         self.assertEqual(variables['startTime'], data['startTime'])
         self.assertEqual(variables['endTime'], data['endTime'])
         self.assertEqual(program_name, data['program']['name'])
+        self.assertEqual(program.space.name, data['space']['name'])
         self.assertEqual(1, Program.objects.all().count())
 
     def test_update_meeting(self):
@@ -134,12 +139,15 @@ class SpaceTestCase(BaseTestCase):
         meeting = self.create_meeting(name='미팅1', program=program)
 
         gql = """
-        mutation UpdateMeeting($id:ID!, $name:String, $startTime:DateTime, $endTime:DateTime) {
-            updateMeeting(id:$id, name:$name, startTime:$startTime, endTime:$endTime) {
+        mutation UpdateMeeting($id:ID!, $name:String, $startTime:DateTime, $endTime:DateTime, $spaceId:ID) {
+            updateMeeting(id:$id, name:$name, startTime:$startTime, endTime:$endTime, spaceId:$spaceId ) {
                 meeting {
                     name
                     startTime
                     endTime
+                    space {
+                        name
+                    }
                 }
             }
         }
@@ -148,13 +156,15 @@ class SpaceTestCase(BaseTestCase):
             'name': 'meet1',
             'startTime': '2020-02-14T20:10:00+09:00',
             'endTime': '2020-02-14T21:10:00+09:00',
-            'id': get_global_id_from_object('Meeting', meeting.pk)
+            'id': get_global_id_from_object('Meeting', meeting.pk),
+            'spaceId': get_global_id_from_object('Space', program.space.pk)
         }
 
         data = self.execute(gql, variables, user=self.user)['updateMeeting']['meeting']
         self.assertEqual(variables['name'], data['name'])
         self.assertEqual(variables['startTime'], data['startTime'])
         self.assertEqual(variables['endTime'], data['endTime'])
+        self.assertEqual(program.space.name, data['space']['name'])
 
     def test_delete_meeting(self):
         program = self.create_program(name='프로그램1', description='프로그램1설명입니다.', user=self.user)

@@ -155,6 +155,7 @@ class CreateMeeting(graphene.Mutation):
     class Arguments:
         name = graphene.String(required=True)
         program_id = graphene.ID(required=True)
+        space_id = graphene.ID()
         start_time = graphene.types.datetime.DateTime(required=True)
         end_time = graphene.types.datetime.DateTime(required=True)
 
@@ -163,11 +164,13 @@ class CreateMeeting(graphene.Mutation):
     def mutate(root, info, **kwargs):
         name = kwargs.get('name')
         program = get_object_from_global_id(models.Program, kwargs.get('program_id'))
+        space = get_object_from_global_id(models.Space, kwargs.get('space_id'))
         start_time = kwargs.get('start_time')
         end_time = kwargs.get('end_time')
 
         meeting = models.Meeting.objects.create(name=name,
                                                 program=program,
+                                                space=space,
                                                 start_time=start_time,
                                                 end_time=end_time)
 
@@ -179,6 +182,7 @@ class UpdateMeeting(graphene.Mutation):
 
     class Arguments:
         id = graphene.ID(required=True)
+        space_id = graphene.ID()
         name = graphene.String()
         start_time = graphene.types.datetime.DateTime()
         end_time = graphene.types.datetime.DateTime()
@@ -192,6 +196,12 @@ class UpdateMeeting(graphene.Mutation):
         assign(kwargs, meeting, 'name')
         assign(kwargs, meeting, 'start_time')
         assign(kwargs, meeting, 'end_time')
+
+        space_id = kwargs.get('space_id')
+        if space_id:
+            space = get_object_from_global_id(models.Space, space_id)
+            meeting.space = space
+
         meeting.save()
 
         return UpdateMeeting(meeting=meeting)
