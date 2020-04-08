@@ -73,6 +73,7 @@ class Program(BaseModel):
 class Meeting(BaseModel):
     name = models.CharField(max_length=128)
     program = models.ForeignKey(Program, related_name="meeting", on_delete=models.CASCADE)
+    space = models.ForeignKey(Space, on_delete=models.SET_NULL, null=True)
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
 
