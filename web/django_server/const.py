@@ -56,3 +56,6 @@ class MannaError(enum.Enum):
     TOO_MANY = 1011
     DOES_NOT_EXIST = 1012
     INVALID_TOKEN = 1013
+
+    # program & meeting: 2xxx
+    MAX_PARTICIPANT = 2000

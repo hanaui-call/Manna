@@ -3,7 +3,7 @@ from datetime import datetime
 
 from django_server.const import ProgramStateEnum, ManClassEnum, MannaError
 from django_server.graphene.utils import get_global_id_from_object
-from django_server.models import Program, Meeting
+from django_server.models import Program, Meeting, ProgramParticipant, MeetingParticipant
 from django_server.test.test_base import BaseTestCase
 
 logger = logging.getLogger(__name__)
@@ -290,3 +290,122 @@ class SpaceTestCase(BaseTestCase):
         self.assertIsNone(data['error'])
         self.assertEqual(variables['name'], data['meeting']['name'])
         self.assertEqual(2, Meeting.objects.all().count())
+
+    def test_program_participant(self):
+        program = self.create_program(name='프로그램1', description='프로그램1설명입니다.', user=self.user, participants_max=4)
+        user1 = self.create_user('user1', 'user1@test.ai', 'user1', 'password')
+        user2 = self.create_user('user2', 'user2@test.ai', 'user2', 'password')
+        user3 = self.create_user('user3', 'user3@test.ai', 'user3', 'password')
+        user4 = self.create_user('user4', 'user4@test.ai', 'user4', 'password')
+        user5 = self.create_user('user5', 'user5@test.ai', 'user5', 'password')
+
+        ProgramParticipant.objects.create(program=program, participant=user1)
+        ProgramParticipant.objects.create(program=program, participant=user2)
+        ProgramParticipant.objects.create(program=program, participant=user3)
+
+        gql = """
+        mutation ParticipateProgram($programId:ID!) {
+            participateProgram(programId:$programId) {
+                programParticipant {
+                    program {
+                        name
+                    }
+                    participant {
+                        nickname
+                    }
+                }
+                error {
+                    key
+                    message
+                }
+            }
+        }
+        """
+        variables = {
+            'programId': get_global_id_from_object('Program', program.pk)
+        }
+
+        data = self.execute(gql, variables, user=user4)['participateProgram']
+        self.assertEqual(program.name, data['programParticipant']['program']['name'])
+        self.assertEqual(user4.nickname, data['programParticipant']['participant']['nickname'])
+        self.assertIsNone(data['error'])
+        self.assertEqual(4, ProgramParticipant.objects.all().count())
+
+        data = self.execute(gql, variables, user=user5)['participateProgram']
+        self.assertEqual(MannaError.MAX_PARTICIPANT.name, data['error']['key'])
+        self.assertEqual(4, ProgramParticipant.objects.all().count())
+
+        gql = """
+        mutation LeaveProgram($programId:ID!){
+            leaveProgram(programId:$programId) {
+                program {
+                    name
+                }
+            }
+        }
+        """
+        variables = {
+            'programId': get_global_id_from_object('Program', program.pk)
+        }
+        self.execute(gql, variables, user=user1)
+        self.assertEqual(3, ProgramParticipant.objects.all().count())
+
+    def test_meeting_participant(self):
+        program = self.create_program(name='프로그램1', description='프로그램1설명입니다.', user=self.user, participants_max=4)
+        meeting = self.create_meeting(name='미팅1', program=program)
+        user1 = self.create_user('user1', 'user1@test.ai', 'user1', 'password')
+        user2 = self.create_user('user2', 'user2@test.ai', 'user2', 'password')
+        user3 = self.create_user('user3', 'user3@test.ai', 'user3', 'password')
+        user4 = self.create_user('user4', 'user4@test.ai', 'user4', 'password')
+        user5 = self.create_user('user5', 'user5@test.ai', 'user5', 'password')
+
+        MeetingParticipant.objects.create(meeting=meeting, participant=user1)
+        MeetingParticipant.objects.create(meeting=meeting, participant=user2)
+        MeetingParticipant.objects.create(meeting=meeting, participant=user3)
+
+        gql = """
+        mutation ParticipateMeeting($meetingId:ID!) {
+            participateMeeting(meetingId:$meetingId) {
+                meetingParticipant {
+                    meeting {
+                        name
+                    }
+                    participant {
+                        nickname
+                    }
+                }
+                error {
+                    key
+                    message
+                }
+            }
+        }
+        """
+        variables = {
+            'meetingId': get_global_id_from_object('Meeting', meeting.pk)
+        }
+
+        data = self.execute(gql, variables, user=user4)['participateMeeting']
+        self.assertEqual(meeting.name, data['meetingParticipant']['meeting']['name'])
+        self.assertEqual(user4.nickname, data['meetingParticipant']['participant']['nickname'])
+        self.assertIsNone(data['error'])
+        self.assertEqual(4, MeetingParticipant.objects.all().count())
+
+        data = self.execute(gql, variables, user=user5)['participateMeeting']
+        self.assertEqual(MannaError.MAX_PARTICIPANT.name, data['error']['key'])
+        self.assertEqual(4, MeetingParticipant.objects.all().count())
+
+        gql = """
+        mutation LeaveMeeting($meetingId:ID!){
+            leaveMeeting(meetingId:$meetingId) {
+                meeting {
+                    name
+                }
+            }
+        }
+        """
+        variables = {
+            'meetingId': get_global_id_from_object('Meeting', meeting.pk)
+        }
+        self.execute(gql, variables, user=user1)
+        self.assertEqual(3, MeetingParticipant.objects.all().count())
