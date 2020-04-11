@@ -46,3 +46,13 @@ class UserStatusEnum(BaseEnum):
     ACTIVE = 'a'
     INACTIVE = 'i'
     DELETED = 'd'
+
+
+class MannaError(enum.Enum):
+    # general case: 1XXX
+    INVALID_PARAMETER = 1000
+    INVALID_STATE = 1001
+    DUPLICATED = 1010
+    TOO_MANY = 1011
+    DOES_NOT_EXIST = 1012
+    INVALID_TOKEN = 1013

@@ -1,12 +1,16 @@
+import logging
+
 import graphene
 from graphene_django import DjangoObjectType
 from graphene_django.filter import DjangoFilterConnectionField
 
 from django_server import const
 from django_server import models
-from django_server.graphene.base import ManClass, ProgramState
+from django_server.graphene.base import ManClass, ProgramState, Error
 from django_server.graphene.utils import get_object_from_global_id, has_program, assign, has_meeting
 from django_server.libs.authentification import authorization
+
+logger = logging.getLogger(__name__)
 
 
 class Program(DjangoObjectType):
@@ -151,6 +155,7 @@ class DeleteProgram(graphene.Mutation):
 
 class CreateMeeting(graphene.Mutation):
     meeting = graphene.Field(Meeting)
+    error = graphene.Field(Error)
 
     class Arguments:
         name = graphene.String(required=True)
@@ -168,6 +173,12 @@ class CreateMeeting(graphene.Mutation):
         start_time = kwargs.get('start_time')
         end_time = kwargs.get('end_time')
 
+        # check to duplicate reservations
+        if space and models.Meeting.objects.filter(space=space,
+                                                   start_time__lt=start_time,
+                                                   end_time__gt=start_time).count() > 0:
+            return CreateMeeting(error=Error(key=const.MannaError.DUPLICATED, message="duplicate time"))
+
         meeting = models.Meeting.objects.create(name=name,
                                                 program=program,
                                                 space=space,
@@ -179,6 +190,7 @@ class CreateMeeting(graphene.Mutation):
 
 class UpdateMeeting(graphene.Mutation):
     meeting = graphene.Field(Meeting)
+    error = graphene.Field(Error)
 
     class Arguments:
         id = graphene.ID(required=True)
@@ -200,6 +212,12 @@ class UpdateMeeting(graphene.Mutation):
         space_id = kwargs.get('space_id')
         if space_id:
             space = get_object_from_global_id(models.Space, space_id)
+
+            # check to duplicate reservations
+            if models.Meeting.objects.filter(space=space,
+                                             start_time__lt=meeting.start_time,
+                                             end_time__gt=meeting.start_time).count() > 0:
+                return UpdateMeeting(error=Error(key=const.MannaError.DUPLICATED, message="duplicate time"))
             meeting.space = space
 
         meeting.save()
