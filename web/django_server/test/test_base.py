@@ -91,11 +91,15 @@ class BaseTestCase(TestCase):
                                       owner=user)
 
     def create_meeting(self, name='기본프로그램', program=None,
-                       start_time=datetime.now(), end_time=datetime.now() + timedelta(hours=1)):
+                       start_time=datetime.now(), end_time=datetime.now() + timedelta(hours=1), space=None):
         if not program:
             program = self.create_program()
+
+        if not space:
+            space = program.space
 
         return Meeting.objects.create(name=name,
                                       program=program,
                                       start_time=start_time,
-                                      end_time=end_time)
+                                      end_time=end_time,
+                                      space=space)
