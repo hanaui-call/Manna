@@ -241,6 +241,7 @@ class DeleteMeeting(graphene.Mutation):
 
 class ParticipateProgram(graphene.Mutation):
     program_participant = graphene.Field(ProgramParicipant)
+    error = graphene.Field(Error)
 
     class Arguments:
         program_id = graphene.ID(required=True)
@@ -250,6 +251,10 @@ class ParticipateProgram(graphene.Mutation):
     def mutate(root, info, **kwargs):
         user = info.context.user
         program = get_object_from_global_id(models.Program, kwargs.get('program_id'))
+
+        if models.ProgramParticipant.objects.filter(program=program).count() >= program.participants_max:
+            return ParticipateProgram(error=Error(key=const.MannaError.MAX_PARTICIPANT,
+                                                  message="the participants have been exceeded."))
 
         program_participant = models.ProgramParticipant.objects.create(program=program, participant=user)
 
@@ -290,6 +295,7 @@ class LeaveMeeting(graphene.Mutation):
 
 class ParticipateMeeting(graphene.Mutation):
     meeting_participant = graphene.Field(MeetingParicipant)
+    error = graphene.Field(Error)
 
     class Arguments:
         meeting_id = graphene.ID(required=True)
@@ -299,6 +305,10 @@ class ParticipateMeeting(graphene.Mutation):
     def mutate(root, info, **kwargs):
         user = info.context.user
         meeting = get_object_from_global_id(models.Meeting, kwargs.get('meeting_id'))
+
+        if models.MeetingParticipant.objects.filter(meeting=meeting).count() >= meeting.program.participants_max:
+            return ParticipateProgram(error=Error(key=const.MannaError.MAX_PARTICIPANT,
+                                                  message="the participants have been exceeded."))
 
         meeting_participant = models.MeetingParticipant.objects.create(meeting=meeting, participant=user)
 
