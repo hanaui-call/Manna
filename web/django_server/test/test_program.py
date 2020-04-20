@@ -293,11 +293,11 @@ class SpaceTestCase(BaseTestCase):
 
     def test_program_participant(self):
         program = self.create_program(name='프로그램1', description='프로그램1설명입니다.', user=self.user, participants_max=4)
-        user1 = self.create_user('user1', 'user1@test.ai', 'user1', 'password')
-        user2 = self.create_user('user2', 'user2@test.ai', 'user2', 'password')
-        user3 = self.create_user('user3', 'user3@test.ai', 'user3', 'password')
-        user4 = self.create_user('user4', 'user4@test.ai', 'user4', 'password')
-        user5 = self.create_user('user5', 'user5@test.ai', 'user5', 'password')
+        user1 = self.create_user('user1', 'user1@test.ai', 'password')
+        user2 = self.create_user('user2', 'user2@test.ai', 'password')
+        user3 = self.create_user('user3', 'user3@test.ai', 'password')
+        user4 = self.create_user('user4', 'user4@test.ai', 'password')
+        user5 = self.create_user('user5', 'user5@test.ai', 'password')
 
         ProgramParticipant.objects.create(program=program, participant=user1)
         ProgramParticipant.objects.create(program=program, participant=user2)
@@ -311,7 +311,7 @@ class SpaceTestCase(BaseTestCase):
                         name
                     }
                     participant {
-                        nickname
+                        name
                     }
                 }
                 error {
@@ -327,7 +327,7 @@ class SpaceTestCase(BaseTestCase):
 
         data = self.execute(gql, variables, user=user4)['participateProgram']
         self.assertEqual(program.name, data['programParticipant']['program']['name'])
-        self.assertEqual(user4.nickname, data['programParticipant']['participant']['nickname'])
+        self.assertEqual(user4.name, data['programParticipant']['participant']['name'])
         self.assertIsNone(data['error'])
         self.assertEqual(4, ProgramParticipant.objects.all().count())
 
@@ -353,11 +353,11 @@ class SpaceTestCase(BaseTestCase):
     def test_meeting_participant(self):
         program = self.create_program(name='프로그램1', description='프로그램1설명입니다.', user=self.user, participants_max=4)
         meeting = self.create_meeting(name='미팅1', program=program)
-        user1 = self.create_user('user1', 'user1@test.ai', 'user1', 'password')
-        user2 = self.create_user('user2', 'user2@test.ai', 'user2', 'password')
-        user3 = self.create_user('user3', 'user3@test.ai', 'user3', 'password')
-        user4 = self.create_user('user4', 'user4@test.ai', 'user4', 'password')
-        user5 = self.create_user('user5', 'user5@test.ai', 'user5', 'password')
+        user1 = self.create_user('user1', 'user1@test.ai', 'password')
+        user2 = self.create_user('user2', 'user2@test.ai', 'password')
+        user3 = self.create_user('user3', 'user3@test.ai', 'password')
+        user4 = self.create_user('user4', 'user4@test.ai', 'password')
+        user5 = self.create_user('user5', 'user5@test.ai', 'password')
 
         MeetingParticipant.objects.create(meeting=meeting, participant=user1)
         MeetingParticipant.objects.create(meeting=meeting, participant=user2)
@@ -371,7 +371,7 @@ class SpaceTestCase(BaseTestCase):
                         name
                     }
                     participant {
-                        nickname
+                        name
                     }
                 }
                 error {
@@ -387,7 +387,7 @@ class SpaceTestCase(BaseTestCase):
 
         data = self.execute(gql, variables, user=user4)['participateMeeting']
         self.assertEqual(meeting.name, data['meetingParticipant']['meeting']['name'])
-        self.assertEqual(user4.nickname, data['meetingParticipant']['participant']['nickname'])
+        self.assertEqual(user4.name, data['meetingParticipant']['participant']['name'])
         self.assertIsNone(data['error'])
         self.assertEqual(4, MeetingParticipant.objects.all().count())
 

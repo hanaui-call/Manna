@@ -30,12 +30,12 @@ class ParticipanceTestCase(BaseTestCase):
         }
 
         data = self.execute(gql, variables, user=self.user)['participateProgram']['programParticipant']
-        self.assertEqual(self.user.user.username, data['participant']['name'])
+        self.assertEqual(self.user.name, data['participant']['name'])
         self.assertEqual(program.name, data['program']['name'])
 
-        user = self.create_user(username='second_user', email='second@dev.ai', nickname="secondary")
+        user = self.create_user(username='second_user', email='second@dev.ai')
         data = self.execute(gql, variables, user=user)['participateProgram']['programParticipant']
-        self.assertEqual(user.user.username, data['participant']['name'])
+        self.assertEqual(user.name, data['participant']['name'])
         self.assertEqual(program.name, data['program']['name'])
 
         self.assertEqual(2, ProgramParticipant.objects.filter(program=program).count())
@@ -63,19 +63,19 @@ class ParticipanceTestCase(BaseTestCase):
         }
 
         data = self.execute(gql, variables, user=self.user)['participateMeeting']['meetingParticipant']
-        self.assertEqual(self.user.user.username, data['participant']['name'])
+        self.assertEqual(self.user.name, data['participant']['name'])
         self.assertEqual(meeting.name, data['meeting']['name'])
 
-        user = self.create_user(username='second_user', email='second@dev.ai', nickname="secondary")
+        user = self.create_user(username='second_user', email='second@dev.ai')
         data = self.execute(gql, variables, user=user)['participateMeeting']['meetingParticipant']
-        self.assertEqual(user.user.username, data['participant']['name'])
+        self.assertEqual(user.name, data['participant']['name'])
         self.assertEqual(meeting.name, data['meeting']['name'])
 
         self.assertEqual(2, MeetingParticipant.objects.filter(meeting=meeting).count())
 
     def test_leave_program(self):
         program = self.create_program(name='프로그램1', description='프로그램1설명입니다.', user=self.user)
-        user = self.create_user(username='second_user', email='second@dev.ai', nickname="secondary")
+        user = self.create_user(username='second_user', email='second@dev.ai')
 
         ProgramParticipant.objects.create(program=program, participant=self.user)
         ProgramParticipant.objects.create(program=program, participant=user)
@@ -103,7 +103,7 @@ class ParticipanceTestCase(BaseTestCase):
     def test_leave_meeting(self):
         program = self.create_program(name='프로그램1', description='프로그램1설명입니다.', user=self.user)
         meeting = self.create_meeting(name='미팅1', program=program)
-        user = self.create_user(username='second_user', email='second@dev.ai', nickname="secondary")
+        user = self.create_user(username='second_user', email='second@dev.ai')
 
         MeetingParticipant.objects.create(meeting=meeting, participant=self.user)
         MeetingParticipant.objects.create(meeting=meeting, participant=user)
