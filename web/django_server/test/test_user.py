@@ -15,10 +15,9 @@ class UserTestCase(BaseTestCase):
         email = 'kdhong@test.ai'
         username = '홍길동'
         password = 'password'
-        nickname = '홍짱'
         gql = """
-        mutation Signup($email:String!, $username:String!, $password:String!, $nickname:String) {
-            signup(email:$email, username:$username, password:$password, nickname:$nickname) {
+        mutation Signup($email:String!, $username:String!, $password:String!) {
+            signup(email:$email, username:$username, password:$password) {
                 ok
             }
         }
@@ -27,7 +26,6 @@ class UserTestCase(BaseTestCase):
             'email': email,
             'username': username,
             'password': password,
-            'nickname': nickname
         }
 
         ok = self.execute(gql, variables)['signup']['ok']
@@ -37,16 +35,14 @@ class UserTestCase(BaseTestCase):
         profile = Profile.objects.get(user=user)
 
         self.assertEqual(email, user.email)
-        self.assertEqual(username, user.username)
-        self.assertEqual(nickname, profile.nickname)
+        self.assertEqual(username, profile.name)
         self.assertEqual(UserStatusEnum.ACTIVE.value, profile.status)
 
     def test_signin(self):
         email = 'kdhong@test.ai'
         username = '홍길동'
-        nickname = '홍짱'
 
-        self.create_user(username=username, email=email, nickname=nickname)
+        self.create_user(username=username, email=email)
 
         gql = """
         mutation Signin($email:String!, $password:String!) {
@@ -54,7 +50,6 @@ class UserTestCase(BaseTestCase):
                 token
                 profile {
                     name
-                    nickname
                     email
                 }
             }
@@ -69,7 +64,6 @@ class UserTestCase(BaseTestCase):
         self.assertNotEqual("", data['token'])
         self.assertEqual(email, data['profile']['email'])
         self.assertEqual(username, data['profile']['name'])
-        self.assertEqual(nickname, data['profile']['nickname'])
 
         variables = {
             'email': email,
@@ -85,11 +79,9 @@ class UserTestCase(BaseTestCase):
         query Me {
             me {
                 email
-                nickname
             }
         }
         """
 
         data = self.execute(gql, user=self.user)['me']
         self.assertEqual(self.user.user.email, data['email'])
-        self.assertEqual(self.user.nickname, data['nickname'])

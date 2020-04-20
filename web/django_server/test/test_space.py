@@ -38,7 +38,7 @@ class SpaceTestCase(BaseTestCase):
         self.assertEqual(variables['detailedAddress'], data['detailedAddress'])
         self.assertEqual(variables['phone'], data['phone'])
         self.assertEqual(1, Building.objects.all().count())
-        self.assertEqual(self.user.user.username, data['madeUser']['name'])
+        self.assertEqual(self.user.name, data['madeUser']['name'])
 
     def test_update_building(self):
         building = self.create_building(name="빌딩1", address="주소1", user=self.user)

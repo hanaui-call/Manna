@@ -23,7 +23,7 @@ class Profile(DjangoObjectType):
 
     @staticmethod
     def resolve_name(root, info):
-        return root.user.username
+        return root.name
 
     @staticmethod
     def resolve_email(root, info):
@@ -48,7 +48,7 @@ class Signin(graphene.Mutation):
         password = kwargs.get('password')
 
         try:
-            user = User.objects.get(email=email)
+            user = User.objects.get(username=email)
             user = auth.authenticate(info.context, username=user.username, password=password)
 
             profile = models.Profile.objects.get(user=user)
@@ -70,17 +70,15 @@ class Signup(graphene.Mutation):
         email = graphene.String(required=True)
         password = graphene.String(required=True)
         username = graphene.String(required=True)
-        nickname = graphene.String()
 
     @staticmethod
     def mutate(root, info, **kwargs):
         email = kwargs.get('email')
         password = kwargs.get('password')
         username = kwargs.get('username')
-        nickname = kwargs.get('nickname', username)
 
-        user = User.objects.create_user(email=email, password=password, username=username)
-        models.Profile.objects.create(user=user, nickname=nickname)
+        user = User.objects.create_user(email=email, password=password, username=email)
+        models.Profile.objects.create(user=user, name=username)
 
         return Signup(ok=True)
 

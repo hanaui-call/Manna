@@ -6,12 +6,12 @@ from django_server import const
 from django_server import models
 
 
-def create_user(email, username, nickname, role=const.ManClassEnum.MEMBER, password=None):
+def create_user(email, username, role=const.ManClassEnum.MEMBER, password=None):
     if not password:
         password = username[0] + 'password!'
 
-    user = User.objects.create_user(email=email, password=password, username=username)
-    return models.Profile.objects.create(user=user, nickname=nickname, role=role.value)
+    user = User.objects.create_user(email=email, password=password, username=email)
+    return models.Profile.objects.create(user=user, role=role.value)
 
 
 def create_building(user, name, address, detailed_address, phone=''):
@@ -70,8 +70,8 @@ def clean_db():
 
 def run(*args):
     clean_db()
-    user1 = create_user('admin.lee@dev.ai', 'Admin Lee', 'admin', const.ManClassEnum.ADMIN)
-    user2 = create_user('member.kim@dev.ai', 'Member Kim', 'member')
+    user1 = create_user('admin.lee@dev.ai', 'Admin Lee', const.ManClassEnum.ADMIN)
+    user2 = create_user('member.kim@dev.ai', 'Member Kim')
 
     building1 = create_building(user1, '하심재-만뜰', '서울 서대문구 가재울로 12', '지하1층')
     building2 = create_building(user1, '하심재-아뜰', '서울 서대문구 가재울로 12', '지하1층')

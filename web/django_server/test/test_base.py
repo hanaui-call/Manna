@@ -24,8 +24,7 @@ class BaseTestCase(TestCase):
     def setUp(self):
         self.clean_db()
         self.user = self.create_user(username='TestAdmin',
-                                     email='test_admin@test.ai',
-                                     nickname='TA')
+                                     email='test_admin@test.ai')
 
     @staticmethod
     def clean_db():
@@ -44,13 +43,13 @@ class BaseTestCase(TestCase):
         return result.data
 
     @staticmethod
-    def create_user(username='Test', email='test@test.ai', nickname='testking', password='password'):
-        user = User.objects.create_user(username=username, email=email, password=password)
-        return Profile.objects.create(user=user, nickname=nickname)
+    def create_user(username='Test', email='test@test.ai', password='password'):
+        user = User.objects.create_user(username=email, email=email, password=password)
+        return Profile.objects.create(user=user, name=username)
 
     def create_building(self, name='기본빌딩', address='서울시', detailed_address='123층', phone='12-1234', user=None):
         if not user:
-            user = self.create_user(username='building_man', email='building_man@test.ai', nickname='building_man')
+            user = self.create_user(username='building_man', email='building_man@test.ai')
 
         return Building.objects.create(name=name,
                                        address=address,
@@ -61,7 +60,7 @@ class BaseTestCase(TestCase):
     def create_space(self, name='기본장소', building=None, required_man_class=ManClassEnum.NON_MEMBER.value,
                      state=SpaceStateEnum.WATING.value, user=None):
         if not user:
-            user = self.create_user(username='space_man', email='space_man@test.ai', nickname='space_man')
+            user = self.create_user(username='space_man', email='space_man@test.ai')
         if not building:
             building = self.create_building(user=user)
 
@@ -75,7 +74,7 @@ class BaseTestCase(TestCase):
                        state=ProgramStateEnum.READY.value, user=None, participants_min=1, participants_max=10,
                        open_time=datetime.now(), close_time=None):
         if not user:
-            user = self.create_user(username='program_man', email='program_man@test.ai', nickname='program_man')
+            user = self.create_user(username='program_man', email='program_man@test.ai')
         if not space:
             space = self.create_space(user=user)
 
