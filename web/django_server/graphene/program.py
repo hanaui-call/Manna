@@ -6,7 +6,7 @@ from graphene_django.filter import DjangoFilterConnectionField
 
 from django_server import const
 from django_server import models
-from django_server.graphene.base import ManClass, ProgramState, Error
+from django_server.graphene.base import ManClass, ProgramState, Error, ProgramTagType
 from django_server.graphene.utils import get_object_from_global_id, has_program, assign, has_meeting
 from django_server.libs.authentification import authorization
 
@@ -33,6 +33,18 @@ class Program(DjangoObjectType):
     @staticmethod
     def resolve_required_man_class(root, info, **kwargs):
         return root.required_man_class
+
+
+class ProgramTag(DjangoObjectType):
+    type = graphene.Field(ProgramTagType)
+
+    class Meta:
+        model = models.ProgramTag
+        interfaces = (graphene.Node,)
+
+    @staticmethod
+    def resolve_type(root, info, **kwargs):
+        return root.type
 
 
 class Meeting(DjangoObjectType):
@@ -67,8 +79,7 @@ class CreateProgram(graphene.Mutation):
         participants_min = graphene.Int()
         participants_max = graphene.Int()
         required_man_class = graphene.Argument(ManClass)
-        open_time = graphene.types.datetime.DateTime(required=True)
-        close_time = graphene.types.datetime.DateTime()
+        tag_id = graphene.ID(required=True)
 
     @staticmethod
     @authorization
@@ -80,8 +91,7 @@ class CreateProgram(graphene.Mutation):
         participants_min = kwargs.get('participants_min', 1)
         participants_max = kwargs.get('participants_max', 10)
         required_man_class = kwargs.get('required_man_class', const.ManClassEnum.NON_MEMBER.value)
-        open_time = kwargs.get('open_time')
-        close_time = kwargs.get('close_time')
+        tag = get_object_from_global_id(models.ProgramTag, kwargs.get('tag_id'))
 
         user = info.context.user
 
@@ -92,8 +102,7 @@ class CreateProgram(graphene.Mutation):
                                                 participants_max=participants_max,
                                                 participants_min=participants_min,
                                                 required_man_class=required_man_class,
-                                                open_time=open_time,
-                                                close_time=close_time,
+                                                tag=tag,
                                                 owner=user)
 
         return CreateProgram(program=program)
@@ -111,8 +120,7 @@ class UpdateProgram(graphene.Mutation):
         participants_min = graphene.Int()
         participants_max = graphene.Int()
         required_man_class = graphene.Argument(ManClass)
-        open_time = graphene.types.datetime.DateTime()
-        close_time = graphene.types.datetime.DateTime()
+        tag_id = graphene.ID()
 
     @staticmethod
     @authorization
@@ -126,13 +134,16 @@ class UpdateProgram(graphene.Mutation):
         assign(kwargs, program, 'participants_min')
         assign(kwargs, program, 'participants_max')
         assign(kwargs, program, 'required_man_class')
-        assign(kwargs, program, 'open_time')
-        assign(kwargs, program, 'close_time')
 
         space_id = kwargs.get('space_id')
         if space_id:
             space = get_object_from_global_id(models.Space, space_id)
             program.space = space
+
+        tag_id = kwargs.get('tag_id')
+        if tag_id:
+            tag = get_object_from_global_id(models.ProgramTag, tag_id)
+            program.tag = tag
 
         program.save()
 
@@ -320,6 +331,7 @@ class ProgramQuery(graphene.ObjectType):
     meeting = graphene.Field(Meeting, id=graphene.ID(required=True))
     all_programs = DjangoFilterConnectionField(Program)
     all_meetings = DjangoFilterConnectionField(Meeting, program_id=graphene.ID())
+    program_tags = graphene.List(ProgramTag)
 
     @staticmethod
     def resolve_program(root, info, **kwargs):
@@ -341,6 +353,11 @@ class ProgramQuery(graphene.ObjectType):
             meetings = meetings.filter(program=program)
 
         return meetings
+
+    @staticmethod
+    @authorization
+    def resolve_program_tags(root, info, **kwargs):
+        return models.ProgramTag.objects.filter(is_active=True)
 
 
 class ProgramMutation(graphene.ObjectType):
