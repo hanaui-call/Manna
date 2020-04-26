@@ -38,8 +38,6 @@ def create_program(user, name, description, space=None):
     participants_min = 5
     participants_max = 10
     required_man_class = const.ManClassEnum.NON_MEMBER.value
-    open_time = datetime.now()
-    close_time = open_time + timedelta(weeks=12)
 
     return models.Program.objects.create(name=name,
                                          description=description,
@@ -48,8 +46,6 @@ def create_program(user, name, description, space=None):
                                          participants_max=participants_max,
                                          participants_min=participants_min,
                                          required_man_class=required_man_class,
-                                         open_time=open_time,
-                                         close_time=close_time,
                                          owner=user)
 
 

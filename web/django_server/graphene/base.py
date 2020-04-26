@@ -6,6 +6,7 @@ ManClass = graphene.Enum.from_enum(const.ManClassEnum)
 ProgramState = graphene.Enum.from_enum(const.ProgramStateEnum)
 SpaceState = graphene.Enum.from_enum(const.SpaceStateEnum)
 UserStatus = graphene.Enum.from_enum(const.UserStatusEnum)
+ProgramTagType = graphene.Enum.from_enum(const.ProgramTagTypeEnum)
 
 
 class Error(graphene.ObjectType):

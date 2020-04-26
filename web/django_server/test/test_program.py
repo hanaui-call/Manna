@@ -1,9 +1,9 @@
 import logging
 from datetime import datetime
 
-from django_server.const import ProgramStateEnum, ManClassEnum, MannaError
+from django_server.const import ProgramStateEnum, ManClassEnum, MannaError, ProgramTagTypeEnum
 from django_server.graphene.utils import get_global_id_from_object
-from django_server.models import Program, Meeting, ProgramParticipant, MeetingParticipant
+from django_server.models import Program, Meeting, ProgramParticipant, MeetingParticipant, ProgramTag
 from django_server.test.test_base import BaseTestCase
 
 logger = logging.getLogger(__name__)
@@ -13,17 +13,21 @@ class SpaceTestCase(BaseTestCase):
     def test_create_program(self):
         space_name = '장소1'
         space = self.create_space(space_name, user=self.user)
+        tag = ProgramTag.objects.first()
 
         gql = """
-        mutation CreateProgram($name:String!, $description:String, $state:ProgramStateEnum, $openTime:DateTime!, $spaceId:ID) {
-            createProgram(name:$name, description:$description, state:$state, openTime:$openTime, spaceId:$spaceId) {
+        mutation CreateProgram($name:String!, $description:String, $state:ProgramStateEnum, $spaceId:ID, $tagId:ID!) {
+            createProgram(name:$name, description:$description, state:$state, spaceId:$spaceId, tagId:$tagId) {
                 program {
                     name
                     description
                     state
-                    openTime
                     space {
                         name
+                    }
+                    tag {
+                        tag
+                        type
                     }
                 }
             }
@@ -33,30 +37,32 @@ class SpaceTestCase(BaseTestCase):
             'name': '프로그램1',
             'description': '프로그램1 입니다.',
             'state': ProgramStateEnum.INVITING.name,
-            'openTime': '2020-02-14T20:10:00+09:00',
-            'spaceId': get_global_id_from_object('Space', space.pk)
+            'spaceId': get_global_id_from_object('Space', space.pk),
+            'tagId': get_global_id_from_object('ProgramTag', tag.pk)
         }
 
         data = self.execute(gql, variables, user=self.user)['createProgram']['program']
         self.assertEqual(variables['name'], data['name'])
         self.assertEqual(variables['description'], data['description'])
         self.assertEqual(variables['state'], data['state'])
-        self.assertEqual(variables['openTime'], data['openTime'])
         self.assertEqual(space_name, data['space']['name'])
+        self.assertEqual(tag.tag, data['tag']['tag'])
         self.assertEqual(1, Program.objects.all().count())
 
     def test_update_program(self):
         program = self.create_program(name='프로그램1', description='프로그램1설명입니다.', user=self.user)
+        tag = ProgramTag.objects.last()
 
         gql = """
-        mutation UpdateProgram($id:ID!, $name:String!, $description:String, $requiredManClass:ManClassEnum $openTime:DateTime!, $closeTime:DateTime) {
-            updateProgram(id:$id, name:$name, description:$description, requiredManClass:$requiredManClass, openTime:$openTime, closeTime:$closeTime) {
+        mutation UpdateProgram($id:ID!, $name:String!, $description:String, $requiredManClass:ManClassEnum, $tagId:ID) {
+            updateProgram(id:$id, name:$name, description:$description, requiredManClass:$requiredManClass, tagId:$tagId) {
                 program {
                     name
                     description
                     requiredManClass
-                    openTime
-                    closeTime
+                    tag {
+                        tag
+                    }
                 }
             }
         }
@@ -66,16 +72,14 @@ class SpaceTestCase(BaseTestCase):
             'name': '프로그램1',
             'description': '프로그램1 입니다.',
             'requiredManClass': ManClassEnum.GUEST.name,
-            'openTime': '2020-02-14T20:10:00+09:00',
-            'closeTime': '2020-02-22T20:30:00+09:00',
+            'tagId': get_global_id_from_object('ProgramTag', tag.pk)
         }
 
         data = self.execute(gql, variables, user=self.user)['updateProgram']['program']
         self.assertEqual(variables['name'], data['name'])
         self.assertEqual(variables['description'], data['description'])
         self.assertEqual(variables['requiredManClass'], data['requiredManClass'])
-        self.assertEqual(variables['openTime'], data['openTime'])
-        self.assertEqual(variables['closeTime'], data['closeTime'])
+        self.assertEqual(tag.tag, data['tag']['tag'])
 
     def test_delete_program(self):
         program = self.create_program(name='프로그램1', description='프로그램1설명입니다.', user=self.user)
@@ -409,3 +413,20 @@ class SpaceTestCase(BaseTestCase):
         }
         self.execute(gql, variables, user=user1)
         self.assertEqual(3, MeetingParticipant.objects.all().count())
+
+    def test_program_tags(self):
+        ProgramTag.objects.create(tag='2019년 4Q', type=ProgramTagTypeEnum.AFTERSCHOOL.value, is_active=False)
+
+        gql = """
+        query ProgramTags {
+            programTags {
+                tag
+                type
+            }
+        }
+        """
+
+        data = self.execute(gql, user=self.user)['programTags']
+        self.assertEqual(3, len(data))
+        self.assertEqual('2020년 1Q', data[0]['tag'])
+        self.assertEqual(ProgramTagTypeEnum.AFTERSCHOOL.name, data[0]['type'])

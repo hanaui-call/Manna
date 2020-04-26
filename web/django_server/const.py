@@ -48,6 +48,12 @@ class UserStatusEnum(BaseEnum):
     DELETED = 'd'
 
 
+class ProgramTagTypeEnum(BaseEnum):
+    AFTERSCHOOL = 'a'
+    TOWN = 't'
+    ETC = 'e'
+
+
 class MannaError(enum.Enum):
     # general case: 1XXX
     INVALID_PARAMETER = 1000

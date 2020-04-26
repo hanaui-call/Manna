@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from django.db import models
 
-from django_server.const import ManClassEnum, SpaceStateEnum, ProgramStateEnum, UserStatusEnum
+from django_server.const import ManClassEnum, SpaceStateEnum, ProgramStateEnum, UserStatusEnum, ProgramTagTypeEnum
 
 
 class BaseModel(models.Model):
@@ -51,6 +51,15 @@ class Space(BaseModel):
         return f'{self.name}, {self.required_man_class}, {self.state}'
 
 
+class ProgramTag(BaseModel):
+    tag = models.CharField(max_length=100, unique=True, default='ETC')
+    is_active = models.BooleanField(default=True)
+    type = models.CharField(max_length=1, default=ProgramTagTypeEnum.ETC.value)
+
+    def __str__(self):
+        return f'{self.tag} / ({self.is_active}) / {self.type}'
+
+
 class Program(BaseModel):
     name = models.CharField(max_length=128)
     description = models.TextField(blank=True)
@@ -60,11 +69,7 @@ class Program(BaseModel):
     participants_min = models.IntegerField(default=1)
     participants_max = models.IntegerField(default=10)
     required_man_class = models.CharField(max_length=1, default=ManClassEnum.NON_MEMBER.value)
-    open_time = models.DateTimeField()
-    close_time = models.DateTimeField(null=True)
-    is_after_school = models.BooleanField(default=False)
-    # tags =
-    # header_image =
+    tag = models.ForeignKey(ProgramTag, on_delete=models.SET_NULL, null=True)
 
     def __str__(self):
         return f'{self.name}, {self.required_man_class}, {self.state}'
