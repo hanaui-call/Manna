@@ -52,6 +52,8 @@ class SpaceTestCase(BaseTestCase):
     def test_update_program(self):
         program = self.create_program(name='프로그램1', description='프로그램1설명입니다.', user=self.user)
         tag = ProgramTag.objects.last()
+        member = self.create_user('user2', 'user2@test.ai', 'password')
+        admin = self.create_user('user3', 'user3@test.ai', 'password', ManClassEnum.ADMIN.value)
 
         gql = """
         mutation UpdateProgram($id:ID!, $name:String!, $description:String, $requiredManClass:ManClassEnum, $tagId:ID) {
@@ -63,6 +65,10 @@ class SpaceTestCase(BaseTestCase):
                     tag {
                         tag
                     }
+                }
+                error {
+                    key
+                    message
                 }
             }
         }
@@ -81,25 +87,42 @@ class SpaceTestCase(BaseTestCase):
         self.assertEqual(variables['requiredManClass'], data['requiredManClass'])
         self.assertEqual(tag.tag, data['tag']['tag'])
 
+        data = self.execute(gql, variables, user=member)['updateProgram']
+        self.assertEqual(MannaError.INVALID_PERMISSION.name, data['error']['key'])
+
+        variables = {
+            'id': get_global_id_from_object('Program', program.pk),
+            'name': '프로그램1(admin)',
+            'description': '프로그램1(admin) 입니다.',
+        }
+        data = self.execute(gql, variables, user=admin)['updateProgram']['program']
+        self.assertEqual(variables['name'], data['name'])
+        self.assertEqual(variables['description'], data['description'])
+
     def test_delete_program(self):
         program = self.create_program(name='프로그램1', description='프로그램1설명입니다.', user=self.user)
+        member = self.create_user('user2', 'user2@test.ai', 'password')
 
         gql = """
         mutation DeleteProgram($id:ID!) {
             deleteProgram(id:$id) {
                 ok
+                error {
+                    key
+                    message
+                }
             }
         }
         """
         variables = {
             'id': get_global_id_from_object('Program', program.pk),
         }
+        data = self.execute(gql, variables, user=member)['deleteProgram']
+        self.assertEqual(MannaError.INVALID_PERMISSION.name, data['error']['key'])
 
         self.assertEqual(1, Program.objects.all().count())
-
         ok = self.execute(gql, variables, user=self.user)['deleteProgram']['ok']
         self.assertTrue(ok)
-
         self.assertEqual(0, Program.objects.all().count())
 
     def test_create_meeting(self):
@@ -430,3 +453,32 @@ class SpaceTestCase(BaseTestCase):
         self.assertEqual(3, len(data))
         self.assertEqual('2020년 1Q', data[0]['tag'])
         self.assertEqual(ProgramTagTypeEnum.AFTERSCHOOL.name, data[0]['type'])
+
+    def test_program(self):
+        program = self.create_program(name='프로그램1',
+                                      description='프로그램1설명입니다.',
+                                      user=self.user,
+                                      participants_max=4)
+        member = self.create_user('user2', 'user2@test.ai', 'password')
+        admin = self.create_user('user3', 'user3@test.ai', 'password', ManClassEnum.ADMIN.value)
+
+        gql = """
+        query Program($id:ID!) {
+            program (id:$id) {
+                name
+                description
+                isEditable
+            }
+        }
+        """
+
+        variables = {
+            'id': get_global_id_from_object('Program', program.pk)
+        }
+
+        data = self.execute(gql, variables=variables, user=self.user)['program']
+        self.assertTrue(data['isEditable'])
+        data = self.execute(gql, variables=variables, user=member)['program']
+        self.assertFalse(data['isEditable'])
+        data = self.execute(gql, variables=variables, user=admin)['program']
+        self.assertTrue(data['isEditable'])
