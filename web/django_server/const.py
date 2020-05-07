@@ -58,6 +58,7 @@ class MannaError(enum.Enum):
     # general case: 1XXX
     INVALID_PARAMETER = 1000
     INVALID_STATE = 1001
+    INVALID_PERMISSION = 1002
     DUPLICATED = 1010
     TOO_MANY = 1011
     DOES_NOT_EXIST = 1012

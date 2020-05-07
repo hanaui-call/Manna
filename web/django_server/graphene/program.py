@@ -13,9 +13,17 @@ from django_server.libs.authentification import authorization
 logger = logging.getLogger(__name__)
 
 
+def is_editable_program(program, user):
+    if user.role == const.ManClassEnum.ADMIN.value:
+        return True
+
+    return program.owner == user
+
+
 class Program(DjangoObjectType):
     state = graphene.Field(ProgramState)
     required_man_class = graphene.Field(ManClass)
+    is_editable = graphene.Boolean()
 
     class Meta:
         model = models.Program
@@ -33,6 +41,12 @@ class Program(DjangoObjectType):
     @staticmethod
     def resolve_required_man_class(root, info, **kwargs):
         return root.required_man_class
+
+    @staticmethod
+    def resolve_is_editable(root, info, **kwargs):
+        if not hasattr(info.context, 'user'):
+            return False
+        return is_editable_program(root, info.context.user)
 
 
 class ProgramTag(DjangoObjectType):
@@ -110,6 +124,7 @@ class CreateProgram(graphene.Mutation):
 
 class UpdateProgram(graphene.Mutation):
     program = graphene.Field(Program)
+    error = graphene.Field(Error)
 
     class Arguments:
         id = graphene.ID(required=True)
@@ -126,6 +141,9 @@ class UpdateProgram(graphene.Mutation):
     @authorization
     @has_program
     def mutate(root, info, **kwargs):
+        if not is_editable_program(info.context.program, info.context.user):
+            return DeleteProgram(error=Error(key=const.MannaError.INVALID_PERMISSION, message="invalid permission"))
+
         program = info.context.program
 
         assign(kwargs, program, 'name')
@@ -152,6 +170,7 @@ class UpdateProgram(graphene.Mutation):
 
 class DeleteProgram(graphene.Mutation):
     ok = graphene.Boolean()
+    error = graphene.Field(Error)
 
     class Arguments:
         id = graphene.ID(required=True)
@@ -160,6 +179,9 @@ class DeleteProgram(graphene.Mutation):
     @authorization
     @has_program
     def mutate(root, info, **kwargs):
+        if not is_editable_program(info.context.program, info.context.user):
+            return DeleteProgram(error=Error(key=const.MannaError.INVALID_PERMISSION, message="invalid permission"))
+
         info.context.program.delete()
         return DeleteProgram(ok=True)
 

@@ -45,9 +45,9 @@ class BaseTestCase(TestCase):
         return result.data
 
     @staticmethod
-    def create_user(username='Test', email='test@test.ai', password='password'):
+    def create_user(username='Test', email='test@test.ai', password='password', role=ManClassEnum.MEMBER.value):
         user = User.objects.create_user(username=email, email=email, password=password)
-        return Profile.objects.create(user=user, name=username)
+        return Profile.objects.create(user=user, name=username, role=role)
 
     def create_building(self, name='기본빌딩', address='서울시', detailed_address='123층', phone='12-1234', user=None):
         if not user:
