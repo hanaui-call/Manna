@@ -1,9 +1,9 @@
 import logging
 
+from django_server.const import ProgramStateEnum, MannaError, ManClassEnum
 from django_server.graphene.utils import get_global_id_from_object
-from django_server.test.test_base import BaseTestCase
 from django_server.models import ProgramParticipant, MeetingParticipant
-from django_server.const import ProgramStateEnum, MannaError
+from django_server.test.test_base import BaseTestCase
 
 logger = logging.getLogger(__name__)
 
@@ -104,24 +104,43 @@ class ParticipanceTestCase(BaseTestCase):
         ProgramParticipant.objects.create(program=program, participant=user)
 
         gql = """
-        mutation LeaveProgram($programId:ID!) {
-            leaveProgram(programId:$programId) {
+        mutation LeaveProgram($programId:ID!, $userId:ID!) {
+            leaveProgram(programId:$programId, userId:$userId) {
                 program {
                     name
+                }
+                error {
+                    key
                 }
             }
         }
         """
         variables = {
             'programId': get_global_id_from_object('Program', program.pk),
+            'userId': get_global_id_from_object('Profile', user.pk),
         }
 
         self.assertEqual(2, ProgramParticipant.objects.filter(program=program).count())
         data = self.execute(gql, variables, user=self.user)['leaveProgram']['program']
         self.assertEqual(program.name, data['name'])
         self.assertEqual(1, ProgramParticipant.objects.filter(program=program).count())
-        self.assertEqual(user.user.username,
+        self.assertEqual(self.user.user.username,
                          ProgramParticipant.objects.filter(program=program).first().participant.user.username)
+
+        ProgramParticipant.objects.create(program=program, participant=user)
+        user2 = self.create_user(username='third_user', email='third@dev.ai')
+        data = self.execute(gql, variables, user=user2)['leaveProgram']['error']
+        self.assertEqual(MannaError.INVALID_PERMISSION.name, data['key'])
+        self.assertEqual(2, ProgramParticipant.objects.filter(program=program).count())
+
+        admin_user = self.create_user(username='admin_user', email='admin@dev.ai', role=ManClassEnum.ADMIN.value)
+        variables = {
+            'programId': get_global_id_from_object('Program', program.pk),
+            'userId': get_global_id_from_object('Profile', user.pk),
+        }
+        data = self.execute(gql, variables, user=admin_user)['leaveProgram']['program']
+        self.assertEqual(program.name, data['name'])
+        self.assertEqual(1, ProgramParticipant.objects.filter(program=program).count())
 
     def test_leave_meeting(self):
         program = self.create_program(name='프로그램1', description='프로그램1설명입니다.', user=self.user)

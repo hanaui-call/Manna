@@ -20,6 +20,7 @@ class Profile(DjangoObjectType):
 
     class Meta:
         model = models.Profile
+        interfaces = (graphene.Node,)
 
     @staticmethod
     def resolve_name(root, info):
