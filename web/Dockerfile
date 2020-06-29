@@ -1,7 +1,7 @@
 
 FROM python:3.6
 RUN pip install --upgrade pip
-RUN pip install Django==2.2.10
+RUN pip install Django==2.2.13
 RUN pip install django-extensions==2.2.6
 RUN pip install django-cors-middleware==1.3.1
 RUN pip install django-graph-auth==0.3.1
