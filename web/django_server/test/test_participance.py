@@ -3,6 +3,7 @@ import logging
 from django_server.graphene.utils import get_global_id_from_object
 from django_server.test.test_base import BaseTestCase
 from django_server.models import ProgramParticipant, MeetingParticipant
+from django_server.const import ProgramStateEnum, MannaError
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +40,28 @@ class ParticipanceTestCase(BaseTestCase):
         self.assertEqual(program.name, data['program']['name'])
 
         self.assertEqual(2, ProgramParticipant.objects.filter(program=program).count())
+
+    def test_participate_end_program(self):
+        program = self.create_program(name='프로그램1', description='프로그램1설명입니다.', user=self.user,
+                                      state=ProgramStateEnum.END.value)
+
+        gql = """
+        mutation ParticipateProgram($programId:ID!) {
+            participateProgram(programId:$programId) {
+                error {
+                    key
+                    message
+                }
+            }
+        }
+        """
+        variables = {
+            'programId': get_global_id_from_object('Program', program.pk),
+        }
+
+        data = self.execute(gql, variables, user=self.user)['participateProgram']['error']
+        self.assertEqual(MannaError.EXPIRED.name, data['key'])
+        self.assertEqual('the program is expired.', data['message'])
 
     def test_participate_meeting(self):
         program = self.create_program(name='프로그램1', description='프로그램1설명입니다.', user=self.user)

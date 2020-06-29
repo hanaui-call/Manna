@@ -285,6 +285,10 @@ class ParticipateProgram(graphene.Mutation):
         user = info.context.user
         program = get_object_from_global_id(models.Program, kwargs.get('program_id'))
 
+        if program.state in [const.ProgramStateEnum.END.value, const.ProgramStateEnum.SUSPEND.value]:
+            return ParticipateProgram(error=Error(key=const.MannaError.EXPIRED,
+                                                  message="the program is expired."))
+
         if models.ProgramParticipant.objects.filter(program=program).count() >= program.participants_max:
             return ParticipateProgram(error=Error(key=const.MannaError.MAX_PARTICIPANT,
                                                   message="the participants have been exceeded."))
