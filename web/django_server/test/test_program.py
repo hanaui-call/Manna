@@ -363,8 +363,8 @@ class SpaceTestCase(BaseTestCase):
         self.assertEqual(4, ProgramParticipant.objects.all().count())
 
         gql = """
-        mutation LeaveProgram($programId:ID!){
-            leaveProgram(programId:$programId) {
+        mutation LeaveProgram($programId:ID!, $userId:ID!){
+            leaveProgram(programId:$programId, userId:$userId) {
                 program {
                     name
                 }
@@ -372,7 +372,8 @@ class SpaceTestCase(BaseTestCase):
         }
         """
         variables = {
-            'programId': get_global_id_from_object('Program', program.pk)
+            'programId': get_global_id_from_object('Program', program.pk),
+            'userId': get_global_id_from_object('Profile', user1.pk)
         }
         self.execute(gql, variables, user=user1)
         self.assertEqual(3, ProgramParticipant.objects.all().count())

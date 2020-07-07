@@ -300,18 +300,24 @@ class ParticipateProgram(graphene.Mutation):
 
 class LeaveProgram(graphene.Mutation):
     program = graphene.Field(Program)
+    error = graphene.Field(Error)
 
     class Arguments:
         program_id = graphene.ID(required=True)
+        user_id = graphene.ID(required=True)
 
     @staticmethod
     @authorization
     def mutate(root, info, **kwargs):
         user = info.context.user
         program = get_object_from_global_id(models.Program, kwargs.get('program_id'))
+        target_user = get_object_from_global_id(models.Profile, kwargs.get('user_id'))
 
-        models.ProgramParticipant.objects.get(program=program, participant=user).delete()
-        return LeaveProgram(program=program)
+        if user == program.owner or user.role == const.ManClassEnum.ADMIN.value or user == target_user:
+            models.ProgramParticipant.objects.get(program=program, participant=target_user).delete()
+            return LeaveProgram(program=program)
+
+        return LeaveProgram(error=Error(key=const.MannaError.INVALID_PERMISSION, message="Invalid permission"))
 
 
 class LeaveMeeting(graphene.Mutation):
