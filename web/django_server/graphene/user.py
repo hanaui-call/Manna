@@ -7,7 +7,7 @@ from django.utils import timezone
 from graphene_django import DjangoObjectType
 
 from django_server import models
-from django_server.graphene.base import UserStatus
+from django_server.graphene.base import UserStatus, ManClass
 from django_server.libs.authentification import AuthHelper, authorization
 
 logger = logging.getLogger(__name__)
@@ -17,6 +17,7 @@ class Profile(DjangoObjectType):
     name = graphene.String(required=True)
     email = graphene.String(required=True)
     status = graphene.Field(UserStatus)
+    role = graphene.Field(ManClass)
 
     class Meta:
         model = models.Profile
@@ -33,6 +34,10 @@ class Profile(DjangoObjectType):
     @staticmethod
     def resolve_status(root, info):
         return root.status
+
+    @staticmethod
+    def resolve_role(root, info, **kwargs):
+        return root.role
 
 
 class Signin(graphene.Mutation):
