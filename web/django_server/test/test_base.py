@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 
 from django_server.const import SpaceStateEnum, ManClassEnum, ProgramStateEnum, ProgramTagTypeEnum
-from django_server.models import Profile, Building, Space, Program, Meeting, ProgramTag
+from django_server.models import Profile, Building, Space, Program, Meeting, ProgramTag, Zoom
 from django_server.schema import schema
 
 logger = logging.getLogger(__name__)
@@ -72,6 +72,15 @@ class BaseTestCase(TestCase):
                                     state=state,
                                     made_user=user)
 
+    @staticmethod
+    def create_zoom(name, account_id, account_pw, meeting_room_id, meeting_room_pw, url):
+        return Zoom.objects.create(name=name,
+                                   account_id=account_id,
+                                   account_pw=account_pw,
+                                   meeting_room_id=meeting_room_id,
+                                   meeting_room_pw=meeting_room_pw,
+                                   url=url)
+
     def create_program(self, name='기본프로그램', description='', space=None,
                        required_man_class=ManClassEnum.NON_MEMBER.value,
                        state=ProgramStateEnum.READY.value, user=None, participants_min=1, participants_max=10,
@@ -95,7 +104,7 @@ class BaseTestCase(TestCase):
                                       tag=tag)
 
     def create_meeting(self, name='기본프로그램', program=None,
-                       start_time=datetime.now(), end_time=datetime.now() + timedelta(hours=1), space=None):
+                       start_time=datetime.now(), end_time=datetime.now() + timedelta(hours=1), space=None, zoom=None):
         if not program:
             program = self.create_program()
 
@@ -106,4 +115,5 @@ class BaseTestCase(TestCase):
                                       program=program,
                                       start_time=start_time,
                                       end_time=end_time,
-                                      space=space)
+                                      space=space,
+                                      zoom=zoom)

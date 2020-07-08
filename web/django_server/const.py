@@ -67,3 +67,6 @@ class MannaError(enum.Enum):
     # program & meeting: 2xxx
     MAX_PARTICIPANT = 2000
     EXPIRED = 2001
+
+    # zoom: 3xxx
+    ZOOM_DUPLICATED = 3000

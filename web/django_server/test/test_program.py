@@ -318,6 +318,111 @@ class SpaceTestCase(BaseTestCase):
         self.assertEqual(variables['name'], data['meeting']['name'])
         self.assertEqual(2, Meeting.objects.all().count())
 
+    def test_check_for_duplicate_zoom_reservations(self):
+        program = self.create_program(name='프로그램1', description='프로그램1설명입니다.', user=self.user)
+        zoom1 = self.create_zoom("Zoom1", 'zoom1@hanaui.net', 'hanaui', '123 456 7890', '1Nt', 'https://us04web.zoom.us/j/1')
+        zoom2 = self.create_zoom("Zoom2", 'zoom2@hanaui.net', 'hanaui', '123 456 7899', '2Nt', 'https://us04web.zoom.us/j/2')
+
+        self.create_meeting(name='미팅1',
+                            program=program,
+                            zoom=zoom1,
+                            start_time=datetime(2020, 3, 1, 12, 0),
+                            end_time=datetime(2020, 3, 1, 13, 0))
+
+        # create
+        gql = """
+        mutation CreateMeeting($name:String!, $programId:ID!, $startTime:DateTime!, $endTime:DateTime!, $zoomId:ID) {
+            createMeeting(name:$name, startTime:$startTime, endTime:$endTime, programId:$programId, zoomId:$zoomId) {
+                meeting {
+                    id
+                    name
+                    startTime
+                    endTime
+                    program {
+                        name
+                    }
+                    zoom {
+                        name
+                    }
+                }
+                error {
+                    key
+                    message
+                }
+            }
+        }
+        """
+        variables = {
+            'name': 'meet1',
+            'startTime': '2020-03-01T12:30:00+09:00',
+            'endTime': '2020-03-01T13:30:00+09:00',
+            'programId': get_global_id_from_object('Program', program.pk),
+            'zoomId': get_global_id_from_object('Zoom', zoom1.pk)
+        }
+
+        data = self.execute(gql, variables, user=self.user)['createMeeting']
+        self.assertEqual(MannaError.ZOOM_DUPLICATED.name, data['error']['key'])
+        self.assertIsNone(data['meeting'])
+
+        variables = {
+            'name': 'meet1',
+            'startTime': '2020-03-01T12:30:00+09:00',
+            'endTime': '2020-03-01T13:30:00+09:00',
+            'programId': get_global_id_from_object('Program', program.pk),
+            'zoomId': get_global_id_from_object('Zoom', zoom2.pk)
+        }
+
+        data = self.execute(gql, variables, user=self.user)['createMeeting']
+        self.assertIsNone(data['error'])
+        self.assertEqual(variables['name'], data['meeting']['name'])
+        self.assertEqual(2, Meeting.objects.all().count())
+
+        meeting_id = data['meeting']['id']
+
+        # update
+        gql = """
+        mutation UpdateMeeting($id:ID!, $name:String, $startTime:DateTime, $endTime:DateTime, $zoomId:ID) {
+            updateMeeting(id:$id, name:$name, startTime:$startTime, endTime:$endTime, zoomId:$zoomId ) {
+                meeting {
+                    name
+                    startTime
+                    endTime
+                    zoom {
+                        name
+                    }
+                }
+                error {
+                    key
+                    message
+                }
+            }
+        }
+        """
+        variables = {
+            'name': 'meet1',
+            'startTime': '2020-03-01T12:30:00+09:00',
+            'endTime': '2020-03-01T14:30:00+09:00',
+            'id': meeting_id,
+            'zoomId': get_global_id_from_object('Zoom', zoom1.pk)
+        }
+
+        data = self.execute(gql, variables, user=self.user)['updateMeeting']
+        self.assertEqual(MannaError.ZOOM_DUPLICATED.name, data['error']['key'])
+        self.assertIsNone(data['meeting'])
+
+        variables = {
+            'name': 'meet1',
+            'startTime': '2020-03-01T13:00:00+09:00',
+            'endTime': '2020-03-01T15:00:00+09:00',
+            'id': meeting_id,
+            'zoomId': get_global_id_from_object('Zoom', zoom1.pk)
+        }
+
+        data = self.execute(gql, variables, user=self.user)['updateMeeting']
+        self.assertIsNone(data['error'])
+        self.assertEqual(variables['name'], data['meeting']['name'])
+        self.assertEqual('Zoom1', data['meeting']['zoom']['name'])
+
     def test_program_participant(self):
         program = self.create_program(name='프로그램1', description='프로그램1설명입니다.', user=self.user, participants_max=4)
         user1 = self.create_user('user1', 'user1@test.ai', 'password')
