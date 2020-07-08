@@ -1,6 +1,6 @@
 import logging
 
-from django_server.const import UserStatusEnum
+from django_server.const import UserStatusEnum, ManClassEnum
 from django_server.test.test_base import BaseTestCase
 
 from django.contrib.auth.models import User
@@ -79,9 +79,11 @@ class UserTestCase(BaseTestCase):
         query Me {
             me {
                 email
+                role
             }
         }
         """
 
         data = self.execute(gql, user=self.user)['me']
         self.assertEqual(self.user.user.email, data['email'])
+        self.assertEqual(ManClassEnum.MEMBER.name, data['role'])
