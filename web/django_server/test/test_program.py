@@ -588,3 +588,82 @@ class SpaceTestCase(BaseTestCase):
         self.assertFalse(data['isEditable'])
         data = self.execute(gql, variables=variables, user=admin)['program']
         self.assertTrue(data['isEditable'])
+
+    def test_zooms(self):
+        program = self.create_program(name='프로그램1', description='프로그램1설명입니다.', user=self.user)
+        zoom1 = self.create_zoom("Zoom1", 'zoom1@hanaui.net', 'hanaui', '123 456 7890', '1Nt',
+                                 'https://us04web.zoom.us/j/1')
+        zoom2 = self.create_zoom("Zoom2", 'zoom2@hanaui.net', 'hanaui', '123 456 7899', '2Nt',
+                                 'https://us04web.zoom.us/j/2')
+
+        self.create_meeting(name='미팅1',
+                            program=program,
+                            zoom=zoom1,
+                            start_time=datetime(2020, 3, 1, 12, 0),
+                            end_time=datetime(2020, 3, 1, 13, 0))
+
+        self.create_meeting(name='미팅2',
+                            program=program,
+                            zoom=zoom2,
+                            start_time=datetime(2020, 3, 1, 16, 0),
+                            end_time=datetime(2020, 3, 1, 17, 0))
+
+        self.create_meeting(name='미팅2',
+                            program=program,
+                            zoom=zoom1,
+                            start_time=datetime(2020, 3, 10, 12, 0),
+                            end_time=datetime(2020, 3, 10, 13, 0))
+
+        self.create_meeting(name='미팅2',
+                            program=program,
+                            zoom=zoom1,
+                            start_time=datetime(2020, 4, 10, 12, 0),
+                            end_time=datetime(2020, 4, 10, 13, 0))
+
+        gql = """
+        query Zooms($year:Int!, $month:Int!, $day:Int) {
+            zooms (year:$year, month:$month, day:$day) {
+                startTime
+                zoom {
+                    meetingRoomId
+                }
+            }
+        }
+        """
+
+        variables = {
+            'year': 2020, 'month': 3
+        }
+
+        data = self.execute(gql, variables=variables, user=self.user)['zooms']
+        self.assertEqual(3, len(data))
+
+        variables = {
+            'year': 2020, 'month': 4
+        }
+        data = self.execute(gql, variables=variables, user=self.user)['zooms']
+        self.assertEqual(1, len(data))
+
+        variables = {
+            'year': 2020, 'month': 5
+        }
+        data = self.execute(gql, variables=variables, user=self.user)['zooms']
+        self.assertEqual(0, len(data))
+
+        variables = {
+            'year': 2020, 'month': 3, 'day': 1
+        }
+        data = self.execute(gql, variables=variables, user=self.user)['zooms']
+        self.assertEqual(2, len(data))
+
+        variables = {
+            'year': 2020, 'month': 4, 'day': 10
+        }
+        data = self.execute(gql, variables=variables, user=self.user)['zooms']
+        self.assertEqual(1, len(data))
+
+        variables = {
+            'year': 2020, 'month': 4, 'day': 11
+        }
+        data = self.execute(gql, variables=variables, user=self.user)['zooms']
+        self.assertEqual(0, len(data))
