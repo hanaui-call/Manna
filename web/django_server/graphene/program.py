@@ -8,18 +8,12 @@ from graphene_django.filter import DjangoFilterConnectionField
 
 from django_server import const
 from django_server import models
-from django_server.graphene.base import ManClass, ProgramState, Error, ProgramTagType
+from django_server.graphene.base import (ManClass, ProgramState, Error, ProgramTagType,
+                                         Program, Meeting, is_editable_program)
 from django_server.graphene.utils import get_object_from_global_id, has_program, assign, has_meeting
 from django_server.libs.authentification import authorization
 
 logger = logging.getLogger(__name__)
-
-
-def is_editable_program(program, user):
-    if user.role == const.ManClassEnum.ADMIN.value:
-        return True
-
-    return program.owner == user
 
 
 def is_duplicated_space(space, start_time):
@@ -34,35 +28,6 @@ def is_duplicated_zoom(zoom, start_time):
     return False
 
 
-class Program(DjangoObjectType):
-    state = graphene.Field(ProgramState)
-    required_man_class = graphene.Field(ManClass)
-    is_editable = graphene.Boolean()
-
-    class Meta:
-        model = models.Program
-        filter_fields = {
-            'name': ['exact', 'icontains'],
-            'description': ['exact', 'icontains'],
-        }
-        interfaces = (graphene.Node,)
-        exclude_fields = ('state', 'required_man_class')
-
-    @staticmethod
-    def resolve_state(root, info, **kwargs):
-        return root.state
-
-    @staticmethod
-    def resolve_required_man_class(root, info, **kwargs):
-        return root.required_man_class
-
-    @staticmethod
-    def resolve_is_editable(root, info, **kwargs):
-        if not hasattr(info.context, 'user'):
-            return False
-        return is_editable_program(root, info.context.user)
-
-
 class ProgramTag(DjangoObjectType):
     type = graphene.Field(ProgramTagType)
 
@@ -73,15 +38,6 @@ class ProgramTag(DjangoObjectType):
     @staticmethod
     def resolve_type(root, info, **kwargs):
         return root.type
-
-
-class Meeting(DjangoObjectType):
-    class Meta:
-        model = models.Meeting
-        filter_fields = {
-            'name': ['exact', 'icontains'],
-        }
-        interfaces = (graphene.Node,)
 
 
 class ProgramParicipant(DjangoObjectType):
@@ -132,6 +88,8 @@ class CreateProgram(graphene.Mutation):
                                                 required_man_class=required_man_class,
                                                 tag=tag,
                                                 owner=user)
+
+        models.ProgramParticipant.objects.create(program=program, participant=user)
 
         return CreateProgram(program=program)
 
@@ -421,6 +379,7 @@ class ProgramQuery(graphene.ObjectType):
         return models.ProgramTag.objects.filter(is_active=True)
 
     @staticmethod
+    @authorization
     def resolve_zooms(root, info, **kwargs):
         year = kwargs.get('year')
         month = kwargs.get('month')
