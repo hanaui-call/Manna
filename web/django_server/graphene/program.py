@@ -1,3 +1,5 @@
+import calendar
+import datetime
 import logging
 
 import graphene
@@ -387,6 +389,10 @@ class ProgramQuery(graphene.ObjectType):
     all_programs = DjangoFilterConnectionField(Program)
     all_meetings = DjangoFilterConnectionField(Meeting, program_id=graphene.ID())
     program_tags = graphene.List(ProgramTag)
+    zooms = graphene.Field(graphene.List(Meeting),
+                           year=graphene.Int(required=True),
+                           month=graphene.Int(required=True),
+                           day=graphene.Int())
 
     @staticmethod
     def resolve_program(root, info, **kwargs):
@@ -413,6 +419,24 @@ class ProgramQuery(graphene.ObjectType):
     @authorization
     def resolve_program_tags(root, info, **kwargs):
         return models.ProgramTag.objects.filter(is_active=True)
+
+    @staticmethod
+    def resolve_zooms(root, info, **kwargs):
+        year = kwargs.get('year')
+        month = kwargs.get('month')
+        day = kwargs.get('day')
+
+        if day:
+            start_day = day
+            last_day = day + 1
+        else:
+            start_day = 1
+            last_day = calendar.monthrange(year, month)[1]
+
+        start_date = datetime.date(year, month, start_day)
+        end_date = datetime.date(year, month, last_day)
+
+        return models.Meeting.objects.filter(start_time__range=(start_date, end_date))
 
 
 class ProgramMutation(graphene.ObjectType):
