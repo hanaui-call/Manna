@@ -51,6 +51,18 @@ class Space(BaseModel):
         return f'{self.name}, {self.required_man_class}, {self.state}'
 
 
+class Zoom(BaseModel):
+    name = models.CharField(max_length=128, unique=True)
+    account_id = models.CharField(max_length=64, unique=True)
+    account_pw = models.CharField(max_length=64)
+    meeting_room_id = models.CharField(max_length=20, unique=True)
+    meeting_room_pw = models.CharField(max_length=20)
+    url = models.CharField(max_length=100, unique=True)
+
+    def __str__(self):
+        return f'{self.name}, {self.url}'
+
+
 class ProgramTag(BaseModel):
     tag = models.CharField(max_length=100, unique=True, default='ETC')
     is_active = models.BooleanField(default=True)
@@ -79,6 +91,7 @@ class Meeting(BaseModel):
     name = models.CharField(max_length=128)
     program = models.ForeignKey(Program, related_name="meeting", on_delete=models.CASCADE)
     space = models.ForeignKey(Space, on_delete=models.SET_NULL, null=True)
+    zoom = models.ForeignKey(Zoom, on_delete=models.SET_NULL, null=True)
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
 

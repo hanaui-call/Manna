@@ -20,6 +20,18 @@ def is_editable_program(program, user):
     return program.owner == user
 
 
+def is_duplicated_space(space, start_time):
+    if models.Meeting.objects.filter(space=space, start_time__lt=start_time, end_time__gt=start_time).count() > 0:
+        return True
+    return False
+
+
+def is_duplicated_zoom(zoom, start_time):
+    if models.Meeting.objects.filter(zoom=zoom, start_time__lt=start_time, end_time__gt=start_time).count() > 0:
+        return True
+    return False
+
+
 class Program(DjangoObjectType):
     state = graphene.Field(ProgramState)
     required_man_class = graphene.Field(ManClass)
@@ -194,6 +206,7 @@ class CreateMeeting(graphene.Mutation):
         name = graphene.String(required=True)
         program_id = graphene.ID(required=True)
         space_id = graphene.ID()
+        zoom_id = graphene.ID()
         start_time = graphene.types.datetime.DateTime(required=True)
         end_time = graphene.types.datetime.DateTime(required=True)
 
@@ -203,18 +216,20 @@ class CreateMeeting(graphene.Mutation):
         name = kwargs.get('name')
         program = get_object_from_global_id(models.Program, kwargs.get('program_id'))
         space = get_object_from_global_id(models.Space, kwargs.get('space_id'))
+        zoom = get_object_from_global_id(models.Zoom, kwargs.get('zoom_id'))
         start_time = kwargs.get('start_time')
         end_time = kwargs.get('end_time')
 
         # check to duplicate reservations
-        if space and models.Meeting.objects.filter(space=space,
-                                                   start_time__lt=start_time,
-                                                   end_time__gt=start_time).count() > 0:
-            return CreateMeeting(error=Error(key=const.MannaError.DUPLICATED, message="duplicate time"))
+        if space and is_duplicated_space(space, start_time):
+            return CreateMeeting(error=Error(key=const.MannaError.DUPLICATED, message="space duplicate time"))
+        if zoom and is_duplicated_zoom(zoom, start_time):
+            return CreateMeeting(error=Error(key=const.MannaError.ZOOM_DUPLICATED, message="zoom duplicate time"))
 
         meeting = models.Meeting.objects.create(name=name,
                                                 program=program,
                                                 space=space,
+                                                zoom=zoom,
                                                 start_time=start_time,
                                                 end_time=end_time)
 
@@ -228,6 +243,7 @@ class UpdateMeeting(graphene.Mutation):
     class Arguments:
         id = graphene.ID(required=True)
         space_id = graphene.ID()
+        zoom_id = graphene.ID()
         name = graphene.String()
         start_time = graphene.types.datetime.DateTime()
         end_time = graphene.types.datetime.DateTime()
@@ -247,11 +263,18 @@ class UpdateMeeting(graphene.Mutation):
             space = get_object_from_global_id(models.Space, space_id)
 
             # check to duplicate reservations
-            if models.Meeting.objects.filter(space=space,
-                                             start_time__lt=meeting.start_time,
-                                             end_time__gt=meeting.start_time).count() > 0:
-                return UpdateMeeting(error=Error(key=const.MannaError.DUPLICATED, message="duplicate time"))
+            if is_duplicated_space(space, meeting.start_time):
+                return UpdateMeeting(error=Error(key=const.MannaError.DUPLICATED, message="space duplicate time"))
             meeting.space = space
+
+        zoom_id = kwargs.get('zoom_id')
+        if zoom_id:
+            zoom = get_object_from_global_id(models.Zoom, zoom_id)
+
+            # check to duplicate reservations
+            if is_duplicated_zoom(zoom, meeting.start_time):
+                return UpdateMeeting(error=Error(key=const.MannaError.ZOOM_DUPLICATED, message="zoom duplicate time"))
+            meeting.zoom = zoom
 
         meeting.save()
 

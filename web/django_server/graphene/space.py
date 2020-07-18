@@ -40,6 +40,15 @@ class Building(DjangoObjectType):
         interfaces = (graphene.Node,)
 
 
+class Zoom(DjangoObjectType):
+    class Meta:
+        model = models.Zoom
+        filter_fields = {
+            'name': ['exact', 'icontains'],
+        }
+        interfaces = (graphene.Node,)
+
+
 class CreateBuilding(graphene.Mutation):
     building = graphene.Field(Building)
 
@@ -180,18 +189,22 @@ class DeleteSpace(graphene.Mutation):
 class SpaceQuery(graphene.ObjectType):
     space = graphene.Field(Space, id=graphene.ID(required=True))
     building = graphene.Field(Building, id=graphene.ID(required=True))
+    zoom = graphene.Field(Zoom, id=graphene.ID(required=True))
     all_spaces = DjangoFilterConnectionField(Space)
     all_buildings = DjangoFilterConnectionField(Building)
+    all_zooms = DjangoFilterConnectionField(Zoom)
 
     @staticmethod
     def resolve_space(root, info, **kwargs):
-        space = get_object_from_global_id(models.Space, kwargs.get('id'))
-        return space
+        return get_object_from_global_id(models.Space, kwargs.get('id'))
 
     @staticmethod
     def resolve_building(root, info, **kwargs):
-        building = get_object_from_global_id(models.Building, kwargs.get('id'))
-        return building
+        return get_object_from_global_id(models.Building, kwargs.get('id'))
+
+    @staticmethod
+    def resolve_zoom(root, info, **kwargs):
+        return get_object_from_global_id(models.Zoom, kwargs.get('id'))
 
 
 class SpaceMutation(graphene.ObjectType):

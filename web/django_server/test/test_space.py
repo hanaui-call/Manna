@@ -229,3 +229,33 @@ class SpaceTestCase(BaseTestCase):
         self.assertEqual('공간1', data1['name'])
         self.assertEqual('공간2', data2['name'])
         self.assertEqual(SpaceStateEnum.WATING.name, data2['state'])
+
+    def test_query_zoom(self):
+        self.create_zoom("Zoom1", 'zoom1@hanaui.net', 'hanaui', '123 456 7890', '1Nt', 'https://us04web.zoom.us/j/1')
+        self.create_zoom("Zoom2", 'zoom2@hanaui.net', 'hanaui', '123 456 7899', '2Nt', 'https://us04web.zoom.us/j/2')
+
+        gql = """
+        query AllZooms{
+            allZooms {
+                edges {
+                    node {
+                        id
+                        name
+                        accountId
+                        meetingRoomId
+                        url
+                    }
+                }
+            }
+        }
+        """
+
+        edges = self.execute(gql)['allZooms']['edges']
+        data1 = edges[0]['node']
+        data2 = edges[1]['node']
+
+        self.assertEqual(2, len(edges))
+        self.assertEqual('Zoom1', data1['name'])
+        self.assertEqual('Zoom2', data2['name'])
+        self.assertEqual('zoom1@hanaui.net', data1['accountId'])
+        self.assertEqual('https://us04web.zoom.us/j/2', data2['url'])
