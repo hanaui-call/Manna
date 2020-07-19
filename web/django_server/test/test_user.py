@@ -1,15 +1,18 @@
 import logging
+from datetime import datetime
+from freezegun import freeze_time
 
-from django_server.const import UserStatusEnum, ManClassEnum
+from django_server.const import UserStatusEnum, ManClassEnum, ProgramStateEnum
 from django_server.test.test_base import BaseTestCase
 
 from django.contrib.auth.models import User
-from django_server.models import Profile
+from django_server.models import Profile, ProgramParticipant
 
 
 logger = logging.getLogger('__file__')
 
 
+@freeze_time('2020-04-01 12:00:00')
 class UserTestCase(BaseTestCase):
     def test_signup(self):
         email = 'kdhong@test.ai'
@@ -75,11 +78,47 @@ class UserTestCase(BaseTestCase):
         self.assertIsNone(data['profile'])
 
     def test_me(self):
+        program1 = self.create_program(name='프로그램1', description='프로그램1설명입니다.', user=self.user)
+        program2 = self.create_program(name='프로그램2',
+                                       description='프로그램2설명입니다.',
+                                       space=program1.space,
+                                       user=self.user,
+                                       state=ProgramStateEnum.END.value)
+
+        ProgramParticipant.objects.create(program=program1, participant=self.user)
+        ProgramParticipant.objects.create(program=program2, participant=self.user)
+
+        self.create_meeting(name='미팅1',
+                            program=program1,
+                            start_time=datetime(2020, 4, 1, 12, 0),
+                            end_time=datetime(2020, 4, 1, 13, 0))
+
+        self.create_meeting(name='미팅2',
+                            program=program1,
+                            start_time=datetime(2020, 4, 1, 16, 0),
+                            end_time=datetime(2020, 4, 1, 17, 0))
+
+        self.create_meeting(name='미팅3',
+                            program=program1,
+                            start_time=datetime(2020, 4, 10, 12, 0),
+                            end_time=datetime(2020, 4, 10, 13, 0))
+
+        self.create_meeting(name='미팅1',
+                            program=program2,
+                            start_time=datetime(2020, 4, 30, 12, 0),
+                            end_time=datetime(2020, 4, 30, 13, 0))
+
         gql = """
         query Me {
             me {
                 email
                 role
+                programs {
+                    name
+                }
+                meetings {
+                    name
+                }
             }
         }
         """
@@ -87,3 +126,5 @@ class UserTestCase(BaseTestCase):
         data = self.execute(gql, user=self.user)['me']
         self.assertEqual(self.user.user.email, data['email'])
         self.assertEqual(ManClassEnum.MEMBER.name, data['role'])
+        self.assertEqual(1, len(data['programs']))
+        self.assertEqual(3, len(data['meetings']))

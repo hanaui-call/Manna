@@ -7,7 +7,8 @@ from django.utils import timezone
 from graphene_django import DjangoObjectType
 
 from django_server import models
-from django_server.graphene.base import UserStatus, ManClass
+from django_server.const import ProgramStateEnum
+from django_server.graphene.base import UserStatus, ManClass, Program, Meeting
 from django_server.libs.authentification import AuthHelper, authorization
 
 logger = logging.getLogger(__name__)
@@ -18,6 +19,8 @@ class Profile(DjangoObjectType):
     email = graphene.String(required=True)
     status = graphene.Field(UserStatus)
     role = graphene.Field(ManClass)
+    programs = graphene.List(Program)
+    meetings = graphene.List(Meeting)
 
     class Meta:
         model = models.Profile
@@ -38,6 +41,19 @@ class Profile(DjangoObjectType):
     @staticmethod
     def resolve_role(root, info, **kwargs):
         return root.role
+
+    @staticmethod
+    def resolve_programs(root, info, **kwargs):
+        return [
+            x.program for x in models.ProgramParticipant.objects.filter(participant=info.context.user)
+            if x.program.state != ProgramStateEnum.END.value
+        ]
+
+    @staticmethod
+    def resolve_meetings(root, info, **kwargs):
+        today = timezone.now()
+        return models.Meeting.objects.filter(start_time__gte=today,
+                                             program__state=ProgramStateEnum.PROGRESS.value)[:3]
 
 
 class Signin(graphene.Mutation):

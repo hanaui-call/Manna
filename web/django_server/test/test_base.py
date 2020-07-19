@@ -83,7 +83,7 @@ class BaseTestCase(TestCase):
 
     def create_program(self, name='기본프로그램', description='', space=None,
                        required_man_class=ManClassEnum.NON_MEMBER.value,
-                       state=ProgramStateEnum.READY.value, user=None, participants_min=1, participants_max=10,
+                       state=ProgramStateEnum.PROGRESS.value, user=None, participants_min=1, participants_max=10,
                        tag=None):
         if not user:
             user = self.create_user(username='program_man', email='program_man@test.ai')

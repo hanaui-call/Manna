@@ -36,7 +36,7 @@ class SpaceTestCase(BaseTestCase):
         variables = {
             'name': '프로그램1',
             'description': '프로그램1 입니다.',
-            'state': ProgramStateEnum.INVITING.name,
+            'state': ProgramStateEnum.PROGRESS.name,
             'spaceId': get_global_id_from_object('Space', space.pk),
             'tagId': get_global_id_from_object('ProgramTag', tag.pk)
         }
@@ -48,6 +48,9 @@ class SpaceTestCase(BaseTestCase):
         self.assertEqual(space_name, data['space']['name'])
         self.assertEqual(tag.tag, data['tag']['tag'])
         self.assertEqual(1, Program.objects.all().count())
+
+        program = Program.objects.first()
+        self.assertIsNotNone(ProgramParticipant.objects.get(program=program, participant=self.user))
 
     def test_update_program(self):
         program = self.create_program(name='프로그램1', description='프로그램1설명입니다.', user=self.user)
