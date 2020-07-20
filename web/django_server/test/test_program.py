@@ -611,6 +611,11 @@ class SpaceTestCase(BaseTestCase):
                             start_time=datetime(2020, 3, 1, 16, 0),
                             end_time=datetime(2020, 3, 1, 17, 0))
 
+        self.create_meeting(name='미팅3',
+                            program=program,
+                            start_time=datetime(2020, 3, 1, 22, 0),
+                            end_time=datetime(2020, 3, 1, 23, 0))
+
         self.create_meeting(name='미팅2',
                             program=program,
                             zoom=zoom1,

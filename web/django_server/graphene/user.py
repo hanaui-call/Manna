@@ -66,8 +66,8 @@ class Signin(graphene.Mutation):
 
     @staticmethod
     def mutate(root, info, **kwargs):
-        email = kwargs.get('email')
-        password = kwargs.get('password')
+        email = kwargs.get('email').strip()
+        password = kwargs.get('password').strip()
 
         try:
             user = User.objects.get(username=email)

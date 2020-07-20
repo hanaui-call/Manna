@@ -395,7 +395,8 @@ class ProgramQuery(graphene.ObjectType):
         start_date = datetime.date(year, month, start_day)
         end_date = datetime.date(year, month, last_day)
 
-        return models.Meeting.objects.filter(start_time__range=(start_date, end_date))
+        return models.Meeting.objects.filter(zoom__isnull=False,
+                                             start_time__range=(start_date, end_date))
 
 
 class ProgramMutation(graphene.ObjectType):
