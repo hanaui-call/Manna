@@ -7,8 +7,8 @@ from django.utils import timezone
 from graphene_django import DjangoObjectType
 
 from django_server import models
-from django_server.const import ProgramStateEnum
-from django_server.graphene.base import UserStatus, ManClass, Program, Meeting
+from django_server.const import ProgramStateEnum, MannaError
+from django_server.graphene.base import UserStatus, ManClass, Program, Meeting, Error
 from django_server.libs.authentification import AuthHelper, authorization
 
 logger = logging.getLogger(__name__)
@@ -95,14 +95,37 @@ class Signup(graphene.Mutation):
 
     @staticmethod
     def mutate(root, info, **kwargs):
-        email = kwargs.get('email')
-        password = kwargs.get('password')
-        username = kwargs.get('username')
+        email = kwargs.get('email').strip()
+        password = kwargs.get('password').strip()
+        username = kwargs.get('username').strip()
 
         user = User.objects.create_user(email=email, password=password, username=email)
         models.Profile.objects.create(user=user, name=username)
 
         return Signup(ok=True)
+
+
+class ResetPassword(graphene.Mutation):
+    ok = graphene.Boolean()
+    error = graphene.Field(Error)
+
+    class Arguments:
+        email = graphene.String(required=True)
+        old_password = graphene.String(required=True)
+        new_password = graphene.String(required=True)
+
+    @staticmethod
+    def mutate(root, info, **kwargs):
+        email = kwargs.get('email').strip()
+        old_password = kwargs.get('old_password').strip()
+        new_password = kwargs.get('new_password').strip()
+
+        user = User.objects.get(email=email)
+        if not user.check_password(old_password):
+            return ResetPassword(error=Error(key=MannaError.INVALID_PERMISSION, message="invalid permission"))
+
+        user.set_password(new_password)
+        return ResetPassword(ok=True)
 
 
 class UserQuery(graphene.ObjectType):
@@ -117,3 +140,4 @@ class UserQuery(graphene.ObjectType):
 class UserMutation(graphene.ObjectType):
     signin = Signin.Field()
     signup = Signup.Field()
+    reset_password = ResetPassword.Field()

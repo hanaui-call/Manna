@@ -2,7 +2,7 @@ import logging
 from datetime import datetime
 from freezegun import freeze_time
 
-from django_server.const import UserStatusEnum, ManClassEnum, ProgramStateEnum
+from django_server.const import UserStatusEnum, ManClassEnum, ProgramStateEnum, MannaError
 from django_server.test.test_base import BaseTestCase
 
 from django.contrib.auth.models import User
@@ -128,3 +128,37 @@ class UserTestCase(BaseTestCase):
         self.assertEqual(ManClassEnum.MEMBER.name, data['role'])
         self.assertEqual(1, len(data['programs']))
         self.assertEqual(3, len(data['meetings']))
+
+    def test_reset_password(self):
+        email = 'kdhong@test.ai'
+        username = '홍길동'
+
+        self.create_user(username=username, email=email)
+
+        gql = """
+        mutation ResetPassword($email:String!, $oldPassword:String!, $newPassword:String!) {
+            resetPassword(email:$email, oldPassword:$oldPassword, newPassword:$newPassword) {
+                error {
+                    key
+                }
+                ok
+            }
+        }
+        """
+        variables = {
+            'email': email,
+            'oldPassword': 'passwor',
+            'newPassword': 'new_password',
+        }
+
+        data = self.execute(gql, variables)['resetPassword']
+        self.assertEqual(MannaError.INVALID_PERMISSION.name, data['error']['key'])
+
+        variables = {
+            'email': email,
+            'oldPassword': 'password',
+            'newPassword': 'new_password',
+        }
+
+        ok = self.execute(gql, variables)['resetPassword']['ok']
+        self.assertTrue(ok)
