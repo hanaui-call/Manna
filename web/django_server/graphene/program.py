@@ -28,6 +28,15 @@ def is_duplicated_zoom(zoom, start_time):
     return False
 
 
+class MeetingInput(graphene.InputObjectType):
+    name = graphene.String(required=True)
+    program_id = graphene.ID(required=True)
+    space_id = graphene.ID()
+    zoom_id = graphene.ID()
+    start_time = graphene.types.datetime.DateTime(required=True)
+    end_time = graphene.types.datetime.DateTime(required=True)
+
+
 class ProgramTag(DjangoObjectType):
     type = graphene.Field(ProgramTagType)
 
@@ -163,6 +172,40 @@ class CreateMeeting(graphene.Mutation):
     error = graphene.Field(Error)
 
     class Arguments:
+        argument = graphene.Argument(MeetingInput, required=True)
+
+    @staticmethod
+    @authorization
+    def mutate(root, info, **kwargs):
+        argument = kwargs.get('argument')
+        name = argument.name
+        program = get_object_from_global_id(models.Program, argument.program_id)
+        space = get_object_from_global_id(models.Space, argument.space_id)
+        zoom = get_object_from_global_id(models.Zoom, argument.zoom_id)
+        start_time = argument.start_time
+        end_time = argument.end_time
+
+        # check to duplicate reservations
+        if space and is_duplicated_space(space, start_time):
+            return CreateMeeting(error=Error(key=const.MannaError.DUPLICATED, message="space duplicate time"))
+        if zoom and is_duplicated_zoom(zoom, start_time):
+            return CreateMeeting(error=Error(key=const.MannaError.ZOOM_DUPLICATED, message="zoom duplicate time"))
+
+        meeting = models.Meeting.objects.create(name=name,
+                                                program=program,
+                                                space=space,
+                                                zoom=zoom,
+                                                start_time=start_time,
+                                                end_time=end_time)
+
+        return CreateMeeting(meeting=meeting)
+
+
+class CreateMeetings(graphene.Mutation):
+    meeting = graphene.Field(Meeting)
+    error = graphene.Field(Error)
+
+    class Arguments:
         name = graphene.String(required=True)
         program_id = graphene.ID(required=True)
         space_id = graphene.ID()
@@ -193,7 +236,7 @@ class CreateMeeting(graphene.Mutation):
                                                 start_time=start_time,
                                                 end_time=end_time)
 
-        return CreateMeeting(meeting=meeting)
+        return CreateMeetings(meeting=meeting)
 
 
 class UpdateMeeting(graphene.Mutation):
@@ -404,6 +447,7 @@ class ProgramMutation(graphene.ObjectType):
     update_program = UpdateProgram.Field()
     delete_program = DeleteProgram.Field()
     create_meeting = CreateMeeting.Field()
+    create_meetings = CreateMeetings.Field()
     update_meeting = UpdateMeeting.Field()
     delete_meeting = DeleteMeeting.Field()
 

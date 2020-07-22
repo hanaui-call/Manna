@@ -133,11 +133,11 @@ class UserTestCase(BaseTestCase):
         email = 'kdhong@test.ai'
         username = '홍길동'
 
-        self.create_user(username=username, email=email)
+        user = self.create_user(username=username, email=email)
 
         gql = """
-        mutation ResetPassword($email:String!, $oldPassword:String!, $newPassword:String!) {
-            resetPassword(email:$email, oldPassword:$oldPassword, newPassword:$newPassword) {
+        mutation ResetPassword($oldPassword:String!, $newPassword:String!) {
+            resetPassword(oldPassword:$oldPassword, newPassword:$newPassword) {
                 error {
                     key
                 }
@@ -146,19 +146,17 @@ class UserTestCase(BaseTestCase):
         }
         """
         variables = {
-            'email': email,
             'oldPassword': 'passwor',
             'newPassword': 'new_password',
         }
 
-        data = self.execute(gql, variables)['resetPassword']
+        data = self.execute(gql, variables, user=user)['resetPassword']
         self.assertEqual(MannaError.INVALID_PERMISSION.name, data['error']['key'])
 
         variables = {
-            'email': email,
             'oldPassword': 'password',
             'newPassword': 'new_password',
         }
 
-        ok = self.execute(gql, variables)['resetPassword']['ok']
+        ok = self.execute(gql, variables, user=user)['resetPassword']['ok']
         self.assertTrue(ok)

@@ -133,8 +133,8 @@ class SpaceTestCase(BaseTestCase):
         program = self.create_program(name=program_name, description='프로그램1설명입니다.', user=self.user)
 
         gql = """
-        mutation CreateMeeting($name:String!, $programId:ID!, $startTime:DateTime!, $endTime:DateTime!, $spaceId:ID) {
-            createMeeting(name:$name, startTime:$startTime, endTime:$endTime, programId:$programId, spaceId:$spaceId) {
+        mutation CreateMeeting($arg:MeetingInput!) {
+            createMeeting(argument:$arg) {
                 meeting {
                     name
                     startTime
@@ -150,17 +150,19 @@ class SpaceTestCase(BaseTestCase):
         }
         """
         variables = {
-            'name': 'meet1',
-            'startTime': '2020-02-14T20:10:00+09:00',
-            'endTime': '2020-02-14T21:10:00+09:00',
-            'programId': get_global_id_from_object('Program', program.pk),
-            'spaceId': get_global_id_from_object('Space', program.space.pk)
+            'arg': {
+                'name': 'meet1',
+                'startTime': '2020-02-14T20:10:00+09:00',
+                'endTime': '2020-02-14T21:10:00+09:00',
+                'programId': get_global_id_from_object('Program', program.pk),
+                'spaceId': get_global_id_from_object('Space', program.space.pk)
+            }
         }
 
         data = self.execute(gql, variables, user=self.user)['createMeeting']['meeting']
-        self.assertEqual(variables['name'], data['name'])
-        self.assertEqual(variables['startTime'], data['startTime'])
-        self.assertEqual(variables['endTime'], data['endTime'])
+        self.assertEqual(variables['arg']['name'], data['name'])
+        self.assertEqual(variables['arg']['startTime'], data['startTime'])
+        self.assertEqual(variables['arg']['endTime'], data['endTime'])
         self.assertEqual(program_name, data['program']['name'])
         self.assertEqual(program.space.name, data['space']['name'])
         self.assertEqual(1, Program.objects.all().count())
@@ -229,8 +231,8 @@ class SpaceTestCase(BaseTestCase):
 
         # create
         gql = """
-        mutation CreateMeeting($name:String!, $programId:ID!, $startTime:DateTime!, $endTime:DateTime!, $spaceId:ID) {
-            createMeeting(name:$name, startTime:$startTime, endTime:$endTime, programId:$programId, spaceId:$spaceId) {
+        mutation CreateMeeting($arg:MeetingInput!) {
+            createMeeting(argument:$arg) {
                 meeting {
                     id
                     name
@@ -251,11 +253,13 @@ class SpaceTestCase(BaseTestCase):
         }
         """
         variables = {
-            'name': 'meet1',
-            'startTime': '2020-03-01T12:30:00+09:00',
-            'endTime': '2020-03-01T13:30:00+09:00',
-            'programId': get_global_id_from_object('Program', program.pk),
-            'spaceId': get_global_id_from_object('Space', program.space.pk)
+            'arg': {
+                'name': 'meet1',
+                'startTime': '2020-03-01T12:30:00+09:00',
+                'endTime': '2020-03-01T13:30:00+09:00',
+                'programId': get_global_id_from_object('Program', program.pk),
+                'spaceId': get_global_id_from_object('Space', program.space.pk)
+            }
         }
 
         data = self.execute(gql, variables, user=self.user)['createMeeting']
@@ -263,16 +267,18 @@ class SpaceTestCase(BaseTestCase):
         self.assertIsNone(data['meeting'])
 
         variables = {
-            'name': 'meet1',
-            'startTime': '2020-03-01T13:00:00+09:00',
-            'endTime': '2020-03-01T14:00:00+09:00',
-            'programId': get_global_id_from_object('Program', program.pk),
-            'spaceId': get_global_id_from_object('Space', program.space.pk)
+            'arg': {
+                'name': 'meet1',
+                'startTime': '2020-03-01T13:00:00+09:00',
+                'endTime': '2020-03-01T14:00:00+09:00',
+                'programId': get_global_id_from_object('Program', program.pk),
+                'spaceId': get_global_id_from_object('Space', program.space.pk)
+            }
         }
 
         data = self.execute(gql, variables, user=self.user)['createMeeting']
         self.assertIsNone(data['error'])
-        self.assertEqual(variables['name'], data['meeting']['name'])
+        self.assertEqual(variables['arg']['name'], data['meeting']['name'])
         self.assertEqual(2, Meeting.objects.all().count())
 
         meeting_id = data['meeting']['id']
@@ -334,8 +340,8 @@ class SpaceTestCase(BaseTestCase):
 
         # create
         gql = """
-        mutation CreateMeeting($name:String!, $programId:ID!, $startTime:DateTime!, $endTime:DateTime!, $zoomId:ID) {
-            createMeeting(name:$name, startTime:$startTime, endTime:$endTime, programId:$programId, zoomId:$zoomId) {
+        mutation CreateMeeting($arg:MeetingInput!) {
+            createMeeting(argument:$arg) {
                 meeting {
                     id
                     name
@@ -356,11 +362,13 @@ class SpaceTestCase(BaseTestCase):
         }
         """
         variables = {
-            'name': 'meet1',
-            'startTime': '2020-03-01T12:30:00+09:00',
-            'endTime': '2020-03-01T13:30:00+09:00',
-            'programId': get_global_id_from_object('Program', program.pk),
-            'zoomId': get_global_id_from_object('Zoom', zoom1.pk)
+            'arg': {
+                'name': 'meet1',
+                'startTime': '2020-03-01T12:30:00+09:00',
+                'endTime': '2020-03-01T13:30:00+09:00',
+                'programId': get_global_id_from_object('Program', program.pk),
+                'zoomId': get_global_id_from_object('Zoom', zoom1.pk)
+            }
         }
 
         data = self.execute(gql, variables, user=self.user)['createMeeting']
@@ -368,16 +376,18 @@ class SpaceTestCase(BaseTestCase):
         self.assertIsNone(data['meeting'])
 
         variables = {
-            'name': 'meet1',
-            'startTime': '2020-03-01T12:30:00+09:00',
-            'endTime': '2020-03-01T13:30:00+09:00',
-            'programId': get_global_id_from_object('Program', program.pk),
-            'zoomId': get_global_id_from_object('Zoom', zoom2.pk)
+            'arg': {
+                'name': 'meet1',
+                'startTime': '2020-03-01T12:30:00+09:00',
+                'endTime': '2020-03-01T13:30:00+09:00',
+                'programId': get_global_id_from_object('Program', program.pk),
+                'zoomId': get_global_id_from_object('Zoom', zoom2.pk)
+            }
         }
 
         data = self.execute(gql, variables, user=self.user)['createMeeting']
         self.assertIsNone(data['error'])
-        self.assertEqual(variables['name'], data['meeting']['name'])
+        self.assertEqual(variables['arg']['name'], data['meeting']['name'])
         self.assertEqual(2, Meeting.objects.all().count())
 
         meeting_id = data['meeting']['id']
