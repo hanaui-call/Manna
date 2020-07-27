@@ -124,6 +124,7 @@ class ResetPassword(graphene.Mutation):
             return ResetPassword(error=Error(key=MannaError.INVALID_PERMISSION, message="invalid permission"))
 
         user.set_password(new_password)
+        user.save()
         return ResetPassword(ok=True)
 
 

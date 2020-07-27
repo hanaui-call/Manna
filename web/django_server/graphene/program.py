@@ -367,7 +367,6 @@ class ParticipateProgram(graphene.Mutation):
         program_id = graphene.ID(required=True)
 
     @staticmethod
-
     @authorization
     def mutate(root, info, **kwargs):
         user = info.context.user
