@@ -36,7 +36,7 @@ class Building(BaseModel):
         ]
 
     def __str__(self):
-        address = f'{self.address} {self.detailed_adresss}'.strip()
+        address = f'{self.address} {self.detailed_address}'.strip()
         return f'{self.name}, {address}'
 
 
