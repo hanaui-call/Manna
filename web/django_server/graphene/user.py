@@ -110,21 +110,21 @@ class ResetPassword(graphene.Mutation):
     error = graphene.Field(Error)
 
     class Arguments:
-        email = graphene.String(required=True)
         old_password = graphene.String(required=True)
         new_password = graphene.String(required=True)
 
     @staticmethod
+    @authorization
     def mutate(root, info, **kwargs):
-        email = kwargs.get('email').strip()
         old_password = kwargs.get('old_password').strip()
         new_password = kwargs.get('new_password').strip()
 
-        user = User.objects.get(email=email)
+        user = info.context.user.user
         if not user.check_password(old_password):
             return ResetPassword(error=Error(key=MannaError.INVALID_PERMISSION, message="invalid permission"))
 
         user.set_password(new_password)
+        user.save()
         return ResetPassword(ok=True)
 
 

@@ -16,16 +16,65 @@ from django_server.libs.authentification import authorization
 logger = logging.getLogger(__name__)
 
 
-def is_duplicated_space(space, start_time):
-    if models.Meeting.objects.filter(space=space, start_time__lt=start_time, end_time__gt=start_time).count() > 0:
+def is_duplicated_space(space, start_time, end_time, meeting=None):
+    meetings = models.Meeting.objects.all()
+    if meeting:
+        meetings = meetings.exclude(id=meeting.id)
+
+    if meetings.filter(space=space, start_time__lte=start_time, end_time__gt=start_time).count() > 0:
+        return True
+    if meetings.filter(space=space, start_time__lt=end_time, end_time__gte=end_time).count() > 0:
         return True
     return False
 
 
-def is_duplicated_zoom(zoom, start_time):
-    if models.Meeting.objects.filter(zoom=zoom, start_time__lt=start_time, end_time__gt=start_time).count() > 0:
+def is_duplicated_zoom(zoom, start_time, end_time, meeting=None):
+    meetings = models.Meeting.objects.all()
+    if meeting:
+        meetings = meetings.exclude(id=meeting.id)
+
+    if meetings.filter(zoom=zoom, start_time__lte=start_time, end_time__gt=start_time).count() > 0:
+        return True
+    if meetings.filter(zoom=zoom, start_time__lt=end_time, end_time__gte=end_time).count() > 0:
         return True
     return False
+
+
+def get_duplicate_idx(lst):
+    for i, argument in enumerate(lst):
+        meeting = None
+        if hasattr(argument, 'id'):
+            meeting = get_object_from_global_id(models.Meeting, argument.id)
+
+        space = get_object_from_global_id(models.Space, argument.space_id)
+        zoom = get_object_from_global_id(models.Zoom, argument.zoom_id)
+        start_time = argument.start_time
+        end_time = argument.end_time
+
+        if space and is_duplicated_space(space, start_time, end_time, meeting):
+            return True, i
+        if zoom and is_duplicated_zoom(zoom, start_time, end_time, meeting):
+            return True, i
+
+    return False, -1
+
+
+class MeetingInput(graphene.InputObjectType):
+    name = graphene.String(required=True)
+    program_id = graphene.ID(required=True)
+    space_id = graphene.ID()
+    zoom_id = graphene.ID()
+    start_time = graphene.types.datetime.DateTime(required=True)
+    end_time = graphene.types.datetime.DateTime(required=True)
+
+
+class MeetingUpdateInput(graphene.InputObjectType):
+    id = graphene.ID(required=True)
+    space_id = graphene.ID()
+    zoom_id = graphene.ID()
+    name = graphene.String()
+    start_time = graphene.types.datetime.DateTime()
+    end_time = graphene.types.datetime.DateTime()
 
 
 class ProgramTag(DjangoObjectType):
@@ -163,27 +212,23 @@ class CreateMeeting(graphene.Mutation):
     error = graphene.Field(Error)
 
     class Arguments:
-        name = graphene.String(required=True)
-        program_id = graphene.ID(required=True)
-        space_id = graphene.ID()
-        zoom_id = graphene.ID()
-        start_time = graphene.types.datetime.DateTime(required=True)
-        end_time = graphene.types.datetime.DateTime(required=True)
+        argument = graphene.Argument(MeetingInput, required=True)
 
     @staticmethod
     @authorization
     def mutate(root, info, **kwargs):
-        name = kwargs.get('name')
-        program = get_object_from_global_id(models.Program, kwargs.get('program_id'))
-        space = get_object_from_global_id(models.Space, kwargs.get('space_id'))
-        zoom = get_object_from_global_id(models.Zoom, kwargs.get('zoom_id'))
-        start_time = kwargs.get('start_time')
-        end_time = kwargs.get('end_time')
+        argument = kwargs.get('argument')
+        name = argument.name
+        program = get_object_from_global_id(models.Program, argument.program_id)
+        space = get_object_from_global_id(models.Space, argument.space_id)
+        zoom = get_object_from_global_id(models.Zoom, argument.zoom_id)
+        start_time = argument.start_time
+        end_time = argument.end_time
 
         # check to duplicate reservations
-        if space and is_duplicated_space(space, start_time):
+        if space and is_duplicated_space(space, start_time, end_time):
             return CreateMeeting(error=Error(key=const.MannaError.DUPLICATED, message="space duplicate time"))
-        if zoom and is_duplicated_zoom(zoom, start_time):
+        if zoom and is_duplicated_zoom(zoom, start_time, end_time):
             return CreateMeeting(error=Error(key=const.MannaError.ZOOM_DUPLICATED, message="zoom duplicate time"))
 
         meeting = models.Meeting.objects.create(name=name,
@@ -223,7 +268,7 @@ class UpdateMeeting(graphene.Mutation):
             space = get_object_from_global_id(models.Space, space_id)
 
             # check to duplicate reservations
-            if is_duplicated_space(space, meeting.start_time):
+            if is_duplicated_space(space, meeting.start_time, meeting.end_time):
                 return UpdateMeeting(error=Error(key=const.MannaError.DUPLICATED, message="space duplicate time"))
             meeting.space = space
 
@@ -232,7 +277,7 @@ class UpdateMeeting(graphene.Mutation):
             zoom = get_object_from_global_id(models.Zoom, zoom_id)
 
             # check to duplicate reservations
-            if is_duplicated_zoom(zoom, meeting.start_time):
+            if is_duplicated_zoom(zoom, meeting.start_time, meeting.end_time):
                 return UpdateMeeting(error=Error(key=const.MannaError.ZOOM_DUPLICATED, message="zoom duplicate time"))
             meeting.zoom = zoom
 
@@ -253,6 +298,65 @@ class DeleteMeeting(graphene.Mutation):
     def mutate(root, info, **kwargs):
         info.context.meeting.delete()
         return DeleteMeeting(ok=True)
+
+
+class CreateMeetings(graphene.Mutation):
+    meetings = graphene.List(Meeting)
+    error_idx = graphene.Int()
+
+    class Arguments:
+        argument = graphene.Argument(graphene.List(MeetingInput), required=True)
+
+    @staticmethod
+    @authorization
+    def mutate(root, info, **kwargs):
+        ok, i = get_duplicate_idx(kwargs.get('argument'))
+        if ok:
+            return CreateMeetings(error_idx=i)
+
+        meetings = []
+        for argument in kwargs.get('argument'):
+            name = argument.name
+            program = get_object_from_global_id(models.Program, argument.program_id)
+            space = get_object_from_global_id(models.Space, argument.space_id)
+            zoom = get_object_from_global_id(models.Zoom, argument.zoom_id)
+            start_time = argument.start_time
+            end_time = argument.end_time
+
+            meetings.append(models.Meeting.objects.create(name=name, program=program, space=space, zoom=zoom,
+                                                          start_time=start_time, end_time=end_time))
+        return CreateMeetings(meetings=meetings, error_idx=-1)
+
+
+class UpdateMeetings(graphene.Mutation):
+    meetings = graphene.List(Meeting)
+    error_idx = graphene.Int()
+
+    class Arguments:
+        argument = graphene.Argument(graphene.List(MeetingUpdateInput), required=True)
+
+    @staticmethod
+    @authorization
+    def mutate(root, info, **kwargs):
+        # 나는 빼야함.
+        ok, i = get_duplicate_idx(kwargs.get('argument'))
+        if ok:
+            return UpdateMeetings(error_idx=i)
+
+        meetings = []
+        for argument in kwargs.get('argument'):
+            meeting = get_object_from_global_id(models.Meeting, argument.id)
+            meeting.name = argument.name
+            meeting.start_time = argument.start_time
+            meeting.end_time = argument.end_time
+
+            meeting.space = get_object_from_global_id(models.Space, argument.space_id)
+            meeting.zoom = get_object_from_global_id(models.Zoom, argument.zoom_id)
+
+            meeting.save()
+            meetings.append(meeting)
+
+        return UpdateMeetings(meetings=meetings, error_idx=-1)
 
 
 class ParticipateProgram(graphene.Mutation):
@@ -404,7 +508,9 @@ class ProgramMutation(graphene.ObjectType):
     update_program = UpdateProgram.Field()
     delete_program = DeleteProgram.Field()
     create_meeting = CreateMeeting.Field()
+    create_meetings = CreateMeetings.Field()
     update_meeting = UpdateMeeting.Field()
+    update_meetings = UpdateMeetings.Field()
     delete_meeting = DeleteMeeting.Field()
 
     participate_program = ParticipateProgram.Field()
