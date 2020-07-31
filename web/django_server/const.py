@@ -50,6 +50,7 @@ class UserStatusEnum(BaseEnum):
 
 class ProgramTagTypeEnum(BaseEnum):
     AFTERSCHOOL = 'a'
+    BOOK = 'b'
     TOWN = 't'
     ETC = 'e'
 
