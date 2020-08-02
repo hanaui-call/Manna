@@ -105,8 +105,8 @@ class UserTestCase(BaseTestCase):
 
         self.create_meeting(name='미팅1',
                             program=program2,
-                            start_time=datetime(2020, 4, 30, 12, 0),
-                            end_time=datetime(2020, 4, 30, 13, 0))
+                            start_time=datetime(2020, 4, 8, 12, 0),
+                            end_time=datetime(2020, 4, 8, 13, 0))
 
         gql = """
         query Me {
@@ -128,6 +128,8 @@ class UserTestCase(BaseTestCase):
         self.assertEqual(ManClassEnum.MEMBER.name, data['role'])
         self.assertEqual(1, len(data['programs']))
         self.assertEqual(3, len(data['meetings']))
+        for i, x in enumerate(data['meetings'], 1):
+            self.assertEqual(f'미팅{i}', x['name'])
 
     def test_reset_password(self):
         email = 'kdhong@test.ai'

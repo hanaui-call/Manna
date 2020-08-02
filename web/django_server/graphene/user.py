@@ -52,8 +52,11 @@ class Profile(DjangoObjectType):
     @staticmethod
     def resolve_meetings(root, info, **kwargs):
         today = timezone.now()
+        joined_program = models.ProgramParticipant.objects.filter(participant=info.context.user).values('program')
+
         return models.Meeting.objects.filter(start_time__gte=today,
-                                             program__state=ProgramStateEnum.PROGRESS.value)[:3]
+                                             program__state=ProgramStateEnum.PROGRESS.value,
+                                             program__in=joined_program).order_by('start_time')[:3]
 
 
 class Signin(graphene.Mutation):
