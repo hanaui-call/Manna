@@ -1,4 +1,5 @@
 from django.contrib.auth.models import User
+import random
 from django.db import models
 
 from django_server.const import ManClassEnum, SpaceStateEnum, ProgramStateEnum, UserStatusEnum, ProgramTagTypeEnum
@@ -72,6 +73,10 @@ class ProgramTag(BaseModel):
         return f'{self.tag} / ({self.is_active}) / {self.type}'
 
 
+def get_default_no():
+    return random.randint(0, 42)
+
+
 class Program(BaseModel):
     name = models.CharField(max_length=128)
     description = models.TextField(blank=True)
@@ -82,6 +87,7 @@ class Program(BaseModel):
     participants_max = models.IntegerField(default=10)
     required_man_class = models.CharField(max_length=1, default=ManClassEnum.NON_MEMBER.value)
     tag = models.ForeignKey(ProgramTag, on_delete=models.SET_NULL, null=True)
+    image_no = models.IntegerField(default=get_default_no)
 
     def __str__(self):
         return f'{self.name}, {self.required_man_class}, {self.state}'

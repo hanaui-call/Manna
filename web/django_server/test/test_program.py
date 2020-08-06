@@ -587,6 +587,7 @@ class SpaceTestCase(BaseTestCase):
                 name
                 description
                 isEditable
+                imageUrl
             }
         }
         """

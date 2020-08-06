@@ -22,6 +22,7 @@ class Program(DjangoObjectType):
     state = graphene.Field(ProgramState)
     required_man_class = graphene.Field(ManClass)
     is_editable = graphene.Boolean()
+    image_url = graphene.String()
 
     class Meta:
         model = models.Program
@@ -45,6 +46,10 @@ class Program(DjangoObjectType):
         if not hasattr(info.context, 'user'):
             return False
         return is_editable_program(root, info.context.user)
+
+    @staticmethod
+    def resolve_image_url(root, info, **kwargs):
+        return f'img_{root.image_no}.jpg'
 
 
 class Meeting(DjangoObjectType):
