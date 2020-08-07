@@ -89,6 +89,9 @@ class Program(BaseModel):
     tag = models.ForeignKey(ProgramTag, on_delete=models.SET_NULL, null=True)
     image_no = models.IntegerField(default=get_default_no)
 
+    class Meta:
+        ordering = ['-modified_at']
+
     def __str__(self):
         return f'{self.name}, {self.required_man_class}, {self.state}'
 
