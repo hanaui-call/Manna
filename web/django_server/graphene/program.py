@@ -467,6 +467,10 @@ class ProgramQuery(graphene.ObjectType):
         return meeting
 
     @staticmethod
+    def resolve_all_programs(root, info, **kwargs):
+        return models.Program.objects.filter(state=const.ProgramStateEnum.PROGRESS.value)
+
+    @staticmethod
     def resolve_all_meetings(root, info, **kwargs):
         meetings = models.Meeting.objects.all()
 
