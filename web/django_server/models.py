@@ -116,6 +116,7 @@ class ProgramParticipant(BaseModel):
     participant = models.ForeignKey(Profile, related_name='program_participant', on_delete=models.SET_NULL, null=True)
 
     class Meta:
+        ordering = ['created_at']
         constraints = [
             models.UniqueConstraint(fields=['program', 'participant'], name='program_participant_constraint')
         ]
