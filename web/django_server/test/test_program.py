@@ -146,6 +146,10 @@ class SpaceTestCase(BaseTestCase):
                         name
                     }
                 }
+                error {
+                    key
+                    message
+                }
             }
         }
         """
@@ -166,6 +170,18 @@ class SpaceTestCase(BaseTestCase):
         self.assertEqual(program_name, data['program']['name'])
         self.assertEqual(program.space.name, data['space']['name'])
         self.assertEqual(1, Program.objects.all().count())
+
+        variables = {
+            'arg': {
+                'name': 'meet2',
+                'startTime': '2020-02-15T20:10:00+09:00',
+                'endTime': '2020-02-15T19:10:00+09:00',
+                'programId': get_global_id_from_object('Program', program.pk),
+                'spaceId': get_global_id_from_object('Space', program.space.pk)
+            }
+        }
+        data = self.execute(gql, variables, user=self.user)['createMeeting']
+        self.assertEqual(MannaError.INVALID_TIME.name, data['error']['key'])
 
     def test_update_meeting(self):
         program = self.create_program(name='프로그램1', description='프로그램1설명입니다.', user=self.user)

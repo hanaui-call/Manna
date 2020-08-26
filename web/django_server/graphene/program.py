@@ -231,6 +231,9 @@ class CreateMeeting(graphene.Mutation):
         if zoom and is_duplicated_zoom(zoom, start_time, end_time):
             return CreateMeeting(error=Error(key=const.MannaError.ZOOM_DUPLICATED, message="zoom duplicate time"))
 
+        if start_time > end_time:
+            return CreateMeeting(error=Error(key=const.MannaError.INVALID_TIME, message="invalid time"))
+
         meeting = models.Meeting.objects.create(name=name,
                                                 program=program,
                                                 space=space,
