@@ -710,6 +710,10 @@ class SpaceTestCase(BaseTestCase):
         mutation CreateMeetings($arg:[MeetingInput]!) {
             createMeetings(argument:$arg) {
                 errorIdx
+                error {
+                    key
+                    message
+                }
                 meetings {
                     name
                     startTime
@@ -774,6 +778,7 @@ class SpaceTestCase(BaseTestCase):
 
         data = self.execute(gql, variables, user=self.user)['createMeetings']
         self.assertEqual(1, data['errorIdx'])
+        self.assertEqual(MannaError.DUPLICATED.name, data['error']['key'])
         self.assertEqual(2, Meeting.objects.all().count())
 
         variables = {
@@ -790,7 +795,31 @@ class SpaceTestCase(BaseTestCase):
 
         data = self.execute(gql, variables, user=self.user)['createMeetings']
         self.assertEqual(0, data['errorIdx'])
+        self.assertEqual(MannaError.DUPLICATED.name, data['error']['key'])
         self.assertEqual(2, Meeting.objects.all().count())
+
+        variables = {
+            'arg': [
+                {
+                    'name': 'meet1',
+                    'startTime': '2020-03-15T20:10:00+09:00',
+                    'endTime': '2020-03-15T21:10:00+09:00',
+                    'programId': get_global_id_from_object('Program', program2.pk),
+                    'spaceId': get_global_id_from_object('Space', program2.space.pk)
+                },
+                {
+                    'name': 'meet2',
+                    'startTime': '2020-03-21T20:10:00+09:00',
+                    'endTime': '2020-03-21T19:10:00+09:00',
+                    'programId': get_global_id_from_object('Program', program2.pk),
+                    'spaceId': get_global_id_from_object('Space', program2.space.pk)
+                },
+            ]
+        }
+
+        data = self.execute(gql, variables, user=self.user)['createMeetings']
+        self.assertEqual(1, data['errorIdx'])
+        self.assertEqual(MannaError.INVALID_TIME.name, data['error']['key'])
 
     def test_update_meetings(self):
         program = self.create_program(name='프로그램1', description='프로그램1설명입니다.', user=self.user)
@@ -802,6 +831,10 @@ class SpaceTestCase(BaseTestCase):
         mutation UpdateMeetings($arg:[MeetingUpdateInput]!) {
             updateMeetings(argument:$arg) {
                 errorIdx
+                error {
+                    key
+                    message
+                }
                 meetings {
                     name
                     startTime
@@ -861,3 +894,27 @@ class SpaceTestCase(BaseTestCase):
 
         data = self.execute(gql, variables, user=self.user)['updateMeetings']
         self.assertEqual(1, data['errorIdx'])
+        self.assertEqual(MannaError.DUPLICATED.name, data['error']['key'])
+
+        variables = {
+            'arg': [
+                {
+                    'name': 'meet1-1',
+                    'startTime': '2020-03-14T20:10:00+09:00',
+                    'endTime': '2020-03-14T19:10:00+09:00',
+                    'id': get_global_id_from_object('Meeting', meeting1.pk),
+                    'spaceId': get_global_id_from_object('Space', program.space.pk)
+                },
+                {
+                    'name': 'meet3',
+                    'startTime': '2020-03-21T20:10:00+09:00',
+                    'endTime': '2020-03-21T21:10:00+09:00',
+                    'id': get_global_id_from_object('Meeting', meeting3.pk),
+                    'spaceId': get_global_id_from_object('Space', program.space.pk)
+                }
+            ]
+        }
+
+        data = self.execute(gql, variables, user=self.user)['updateMeetings']
+        self.assertEqual(0, data['errorIdx'])
+        self.assertEqual(MannaError.INVALID_TIME.name, data['error']['key'])

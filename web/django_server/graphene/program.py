@@ -52,11 +52,13 @@ def get_duplicate_idx(lst):
         end_time = argument.end_time
 
         if space and is_duplicated_space(space, start_time, end_time, meeting):
-            return True, i
+            return True, i, Error(key=const.MannaError.DUPLICATED, message="space duplicate time")
         if zoom and is_duplicated_zoom(zoom, start_time, end_time, meeting):
-            return True, i
+            return True, i, Error(key=const.MannaError.ZOOM_DUPLICATED, message="zoom duplicate time")
+        if start_time > end_time:
+            return True, i, Error(key=const.MannaError.INVALID_TIME, message="invalid time")
 
-    return False, -1
+    return False, -1, None
 
 
 class MeetingInput(graphene.InputObjectType):
@@ -266,6 +268,9 @@ class UpdateMeeting(graphene.Mutation):
         assign(kwargs, meeting, 'start_time')
         assign(kwargs, meeting, 'end_time')
 
+        if meeting.start_time > meeting.end_time:
+            return CreateMeeting(error=Error(key=const.MannaError.INVALID_TIME, message="invalid time"))
+
         space_id = kwargs.get('space_id')
         if space_id:
             space = get_object_from_global_id(models.Space, space_id)
@@ -306,6 +311,7 @@ class DeleteMeeting(graphene.Mutation):
 class CreateMeetings(graphene.Mutation):
     meetings = graphene.List(Meeting)
     error_idx = graphene.Int()
+    error = graphene.Field(Error)
 
     class Arguments:
         argument = graphene.Argument(graphene.List(MeetingInput), required=True)
@@ -313,9 +319,9 @@ class CreateMeetings(graphene.Mutation):
     @staticmethod
     @authorization
     def mutate(root, info, **kwargs):
-        ok, i = get_duplicate_idx(kwargs.get('argument'))
+        ok, i, err = get_duplicate_idx(kwargs.get('argument'))
         if ok:
-            return CreateMeetings(error_idx=i)
+            return CreateMeetings(error_idx=i, error=err)
 
         meetings = []
         for argument in kwargs.get('argument'):
@@ -334,6 +340,7 @@ class CreateMeetings(graphene.Mutation):
 class UpdateMeetings(graphene.Mutation):
     meetings = graphene.List(Meeting)
     error_idx = graphene.Int()
+    error = graphene.Field(Error)
 
     class Arguments:
         argument = graphene.Argument(graphene.List(MeetingUpdateInput), required=True)
@@ -341,10 +348,9 @@ class UpdateMeetings(graphene.Mutation):
     @staticmethod
     @authorization
     def mutate(root, info, **kwargs):
-        # 나는 빼야함.
-        ok, i = get_duplicate_idx(kwargs.get('argument'))
+        ok, i, err = get_duplicate_idx(kwargs.get('argument'))
         if ok:
-            return UpdateMeetings(error_idx=i)
+            return UpdateMeetings(error_idx=i, error=err)
 
         meetings = []
         for argument in kwargs.get('argument'):
