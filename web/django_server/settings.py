@@ -14,6 +14,12 @@ import os
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DEVELOPMENT = 'development'
+
+ENV = os.environ.get('ENV', DEVELOPMENT).lower()
+
+def is_dev():
+    return ENV.lower() == DEVELOPMENT
 
 
 # Quick-start development settings - unsuitable for production
@@ -23,7 +29,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = '9=@3d2qpct#uk&if198m&)**ifkhnmk@4ulsa^8$+rrq65hqbg'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = True if is_dev() else False
 
 # Application definition
 INSTALLED_APPS = [
