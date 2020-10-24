@@ -502,17 +502,17 @@ class ProgramQuery(graphene.ObjectType):
         month = kwargs.get('month')
         day = kwargs.get('day')
 
-        enable_tomorrow = False
+        enable_tomorrow = True
         start_day = 1
         last_day = calendar.monthrange(year, month)[1]
 
         if day:
             start_day = day
             if start_day == last_day:
-                enable_tomorrow = True
                 last_day = start_day
             else:
                 last_day = day + 1
+                enable_tomorrow = False
 
         start_date = datetime.date(year, month, start_day)
         end_date = datetime.date(year, month, last_day)
