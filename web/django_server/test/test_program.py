@@ -703,6 +703,19 @@ class SpaceTestCase(BaseTestCase):
         data = self.execute(gql, variables=variables, user=self.user)['zooms']
         self.assertEqual(0, len(data))
 
+        self.create_meeting(name='미팅',
+                            program=program,
+                            zoom=zoom1,
+                            start_time=datetime(2020, 10, 31, 22, 0),
+                            end_time=datetime(2020, 10, 31, 23, 30))
+
+        variables = {
+            'year': 2020, 'month': 10, 'day': 31
+        }
+        data = self.execute(gql, variables=variables, user=self.user)['zooms']
+        self.assertEqual(1, len(data))
+        self.assertEqual('123 456 7890', data[0]['zoom']['meetingRoomId'])
+
     def test_create_meetings(self):
         program = self.create_program(name='프로그램1', description='프로그램1설명입니다.', user=self.user)
 

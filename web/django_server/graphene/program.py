@@ -502,15 +502,23 @@ class ProgramQuery(graphene.ObjectType):
         month = kwargs.get('month')
         day = kwargs.get('day')
 
+        enable_tomorrow = False
+        start_day = 1
+        last_day = calendar.monthrange(year, month)[1]
+
         if day:
             start_day = day
-            last_day = day + 1
-        else:
-            start_day = 1
-            last_day = calendar.monthrange(year, month)[1]
+            if start_day == last_day:
+                enable_tomorrow = True
+                last_day = start_day
+            else:
+                last_day = day + 1
 
         start_date = datetime.date(year, month, start_day)
         end_date = datetime.date(year, month, last_day)
+
+        if enable_tomorrow:
+            end_date += datetime.timedelta(days=1)
 
         return models.Meeting.objects.filter(zoom__isnull=False,
                                              start_time__range=(start_date, end_date))
