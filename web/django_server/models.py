@@ -88,6 +88,7 @@ class Program(BaseModel):
     required_man_class = models.CharField(max_length=1, default=ManClassEnum.NON_MEMBER.value)
     tag = models.ForeignKey(ProgramTag, on_delete=models.SET_NULL, null=True)
     image_no = models.IntegerField(default=get_default_no)
+    is_notice = models.BooleanField(default=False)
 
     class Meta:
         ordering = ['-modified_at']

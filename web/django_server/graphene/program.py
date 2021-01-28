@@ -115,6 +115,7 @@ class CreateProgram(graphene.Mutation):
         participants_max = graphene.Int()
         required_man_class = graphene.Argument(ManClass)
         tag_id = graphene.ID(required=True)
+        is_notice = graphene.Boolean()
 
     @staticmethod
     @authorization
@@ -127,6 +128,7 @@ class CreateProgram(graphene.Mutation):
         participants_max = kwargs.get('participants_max', 10)
         required_man_class = kwargs.get('required_man_class', const.ManClassEnum.NON_MEMBER.value)
         tag = get_object_from_global_id(models.ProgramTag, kwargs.get('tag_id'))
+        is_notice = kwargs.get('is_notice', False)
 
         user = info.context.user
 
@@ -138,6 +140,7 @@ class CreateProgram(graphene.Mutation):
                                                 participants_min=participants_min,
                                                 required_man_class=required_man_class,
                                                 tag=tag,
+                                                is_notice=is_notice,
                                                 owner=user)
 
         models.ProgramParticipant.objects.create(program=program, participant=user)
@@ -159,6 +162,7 @@ class UpdateProgram(graphene.Mutation):
         participants_max = graphene.Int()
         required_man_class = graphene.Argument(ManClass)
         tag_id = graphene.ID()
+        is_notice = graphene.Boolean()
 
     @staticmethod
     @authorization
@@ -175,6 +179,7 @@ class UpdateProgram(graphene.Mutation):
         assign(kwargs, program, 'participants_min')
         assign(kwargs, program, 'participants_max')
         assign(kwargs, program, 'required_man_class')
+        assign(kwargs, program, 'is_notice')
 
         space_id = kwargs.get('space_id')
         if space_id:

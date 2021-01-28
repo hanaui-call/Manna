@@ -16,8 +16,8 @@ class SpaceTestCase(BaseTestCase):
         tag = ProgramTag.objects.first()
 
         gql = """
-        mutation CreateProgram($name:String!, $description:String, $state:ProgramStateEnum, $spaceId:ID, $tagId:ID!) {
-            createProgram(name:$name, description:$description, state:$state, spaceId:$spaceId, tagId:$tagId) {
+        mutation CreateProgram($name:String!, $description:String, $state:ProgramStateEnum, $spaceId:ID, $tagId:ID!, $isNotice:Boolean) {
+            createProgram(name:$name, description:$description, state:$state, spaceId:$spaceId, tagId:$tagId, isNotice:$isNotice) {
                 program {
                     name
                     description
@@ -29,6 +29,7 @@ class SpaceTestCase(BaseTestCase):
                         tag
                         type
                     }
+                    isNotice
                 }
             }
         }
@@ -38,7 +39,8 @@ class SpaceTestCase(BaseTestCase):
             'description': '프로그램1 입니다.',
             'state': ProgramStateEnum.PROGRESS.name,
             'spaceId': get_global_id_from_object('Space', space.pk),
-            'tagId': get_global_id_from_object('ProgramTag', tag.pk)
+            'tagId': get_global_id_from_object('ProgramTag', tag.pk),
+            'isNotice': True,
         }
 
         data = self.execute(gql, variables, user=self.user)['createProgram']['program']
@@ -47,6 +49,7 @@ class SpaceTestCase(BaseTestCase):
         self.assertEqual(variables['state'], data['state'])
         self.assertEqual(space_name, data['space']['name'])
         self.assertEqual(tag.tag, data['tag']['tag'])
+        self.assertTrue(data['isNotice'])
         self.assertEqual(1, Program.objects.all().count())
 
         program = Program.objects.first()
@@ -59,8 +62,8 @@ class SpaceTestCase(BaseTestCase):
         admin = self.create_user('user3', 'user3@test.ai', 'password', ManClassEnum.ADMIN.value)
 
         gql = """
-        mutation UpdateProgram($id:ID!, $name:String!, $description:String, $requiredManClass:ManClassEnum, $tagId:ID) {
-            updateProgram(id:$id, name:$name, description:$description, requiredManClass:$requiredManClass, tagId:$tagId) {
+        mutation UpdateProgram($id:ID!, $name:String!, $description:String, $requiredManClass:ManClassEnum, $tagId:ID, $isNotice:Boolean) {
+            updateProgram(id:$id, name:$name, description:$description, requiredManClass:$requiredManClass, tagId:$tagId, isNotice:$isNotice) {
                 program {
                     name
                     description
@@ -68,6 +71,7 @@ class SpaceTestCase(BaseTestCase):
                     tag {
                         tag
                     }
+                    isNotice
                 }
                 error {
                     key
@@ -97,10 +101,12 @@ class SpaceTestCase(BaseTestCase):
             'id': get_global_id_from_object('Program', program.pk),
             'name': '프로그램1(admin)',
             'description': '프로그램1(admin) 입니다.',
+            'isNotice': True,
         }
         data = self.execute(gql, variables, user=admin)['updateProgram']['program']
         self.assertEqual(variables['name'], data['name'])
         self.assertEqual(variables['description'], data['description'])
+        self.assertTrue(data['isNotice'])
 
     def test_delete_program(self):
         program = self.create_program(name='프로그램1', description='프로그램1설명입니다.', user=self.user)
