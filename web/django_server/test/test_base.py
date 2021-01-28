@@ -84,7 +84,7 @@ class BaseTestCase(TestCase):
     def create_program(self, name='기본프로그램', description='', space=None,
                        required_man_class=ManClassEnum.NON_MEMBER.value,
                        state=ProgramStateEnum.PROGRESS.value, user=None, participants_min=1, participants_max=10,
-                       tag=None):
+                       tag=None, is_notice=False):
         if not user:
             user = self.create_user(username='program_man', email='program_man@test.ai')
         if not space:
@@ -101,7 +101,8 @@ class BaseTestCase(TestCase):
                                       participants_min=participants_min,
                                       required_man_class=required_man_class,
                                       owner=user,
-                                      tag=tag)
+                                      tag=tag,
+                                      is_notice=is_notice)
 
     def create_meeting(self, name='기본프로그램', program=None,
                        start_time=datetime.now(), end_time=datetime.now() + timedelta(hours=1), space=None, zoom=None):

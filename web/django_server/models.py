@@ -91,7 +91,7 @@ class Program(BaseModel):
     is_notice = models.BooleanField(default=False)
 
     class Meta:
-        ordering = ['-modified_at']
+        ordering = ['-is_notice', '-modified_at']
 
     def __str__(self):
         return f'{self.name}, {self.required_man_class}, {self.state}'

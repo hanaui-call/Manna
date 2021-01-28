@@ -937,3 +937,47 @@ class SpaceTestCase(BaseTestCase):
         data = self.execute(gql, variables, user=self.user)['updateMeetings']
         self.assertEqual(0, data['errorIdx'])
         self.assertEqual(MannaError.INVALID_TIME.name, data['error']['key'])
+
+    def test_programs(self):
+        program1 = self.create_program(name='program1',
+                                       description='프로그램1설명입니다.',
+                                       user=self.user,
+                                       participants_max=4,
+                                       is_notice=True)
+        program2 = self.create_program(name='program2',
+                                       space=program1.space,
+                                       description='프로그램2설명입니다.',
+                                       user=self.user,
+                                       participants_max=4,
+                                       is_notice=False)
+        program3 = self.create_program(name='program3',
+                                       space=program1.space,
+                                       description='프로그램3설명입니다.',
+                                       user=self.user,
+                                       participants_max=4,
+                                       is_notice=True)
+
+        gql = """
+        query AllProgram($first: Int, $after: String, $name: String, $name_Icontains: String, $description: String, $description_Icontains: String) {
+            allPrograms(first: $first, after: $after, name: $name, name_Icontains: $name_Icontains, description: $description, description_Icontains: $description_Icontains) {
+                edges {
+                    node {
+                        id
+                        name
+                        isNotice
+                    }
+                }
+            }
+        }
+        """
+
+        variables = {
+            "first": 10,
+            "name_Icontains": "",
+            "description_Icontains": ""
+        }
+
+        data = self.execute(gql, variables=variables, user=self.user)['allPrograms']['edges']
+        self.assertEqual(program3.name, data[0]['node']['name'])
+        self.assertEqual(program1.name, data[1]['node']['name'])
+        self.assertEqual(program2.name, data[2]['node']['name'])
